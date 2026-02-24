@@ -1,19 +1,23 @@
 # Dev Log 03 - Sprint 1 Auth Service
 
 ## Development tasks ✅
-- Implemented JWT issuing, insecure validation logic, weak secret support, refresh tokens, secure mode behavior, and OIDC endpoints.
+- Implemented standards-compliant JWT issuance at `POST /auth/jwt/issue` using HS256 signing.
+- Added claim issuance for `sub`, `role`, `iat`, and `exp` with 10-minute token lifetime.
 
-## Dev testing tasks 🧪
-- Checked invalid signature and refresh replay behavior in vulnerable and secure modes.
+## Dev Testing tasks 🧪
+- Added unit test coverage for JWT response format and claim correctness.
+- Added expiration window validation test for deterministic token timing behavior.
 
 ## QA tasks 🧪
-- Verified OAuth/OIDC endpoint responses and redirect handling.
+- QA case added to runbook: issue token and validate three-part JWT plus decodable payload claims.
+- Status set to ready to execute for QA environment.
 
 ## Documentation tasks 📘
-- Documented auth endpoints, JWT modes, secure mode behavior, and OIDC flows.
+- Updated auth manual with JWT issue endpoint contract.
+- Updated manuals index and dev logs index references.
 
 ## User Guide updates 📖
-- Added authentication walkthrough, broken JWT exploit path, curl examples, and OIDC misuse demo.
+- Added user-facing JWT issue example and expected output guidance.
 
 ## Commit messages 💾
-- feat(auth): implement jwt issuing\n- feat(auth): add insecure validation\n- feat(auth): add secure mode toggle\n- feat(auth): add oidc endpoints\n- docs(auth): document endpoints and oidc
+- feat(auth): implement jwt issuing

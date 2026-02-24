@@ -2,6 +2,8 @@ package lab
 
 import (
 	"context"
+	"crypto/hmac"
+	"crypto/sha256"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -117,22 +119,51 @@ func (s *state) issueJWT(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var in map[string]string
-	_ = json.NewDecoder(r.Body).Decode(&in)
-	alg := in["alg"]
-	if alg == "" {
-		alg = "HS256"
+	if err := json.NewDecoder(r.Body).Decode(&in); err != nil && err != io.EOF {
+		respond(w, http.StatusBadRequest, map[string]string{"error": "invalid request body"})
+		return
 	}
 	uid := in["user_id"]
 	if uid == "" {
 		uid = "1"
 	}
-	payload := fmt.Sprintf(`{"sub":"%s","exp":%d,"role":"user"}`, uid, time.Now().Add(10*time.Minute).Unix())
-	if !s.cfg.SecureMode && alg == "none" {
-		respond(w, http.StatusOK, map[string]string{"token": "header." + base64.RawURLEncoding.EncodeToString([]byte(payload)) + "."})
+	token, err := issueJWTToken(uid, "user", s.cfg.WeakJWTKey, time.Now().UTC())
+	if err != nil {
+		respond(w, http.StatusInternalServerError, map[string]string{"error": "failed to issue token"})
 		return
 	}
-	sig := base64.RawURLEncoding.EncodeToString([]byte(s.cfg.WeakJWTKey))
-	respond(w, http.StatusOK, map[string]string{"token": "header." + base64.RawURLEncoding.EncodeToString([]byte(payload)) + "." + sig})
+	respond(w, http.StatusOK, map[string]string{"token": token})
+}
+
+func issueJWTToken(userID, role, secret string, now time.Time) (string, error) {
+	header := map[string]string{
+		"alg": "HS256",
+		"typ": "JWT",
+	}
+	payload := map[string]any{
+		"sub":  userID,
+		"role": role,
+		"iat":  now.Unix(),
+		"exp":  now.Add(10 * time.Minute).Unix(),
+	}
+
+	headerJSON, err := json.Marshal(header)
+	if err != nil {
+		return "", err
+	}
+	payloadJSON, err := json.Marshal(payload)
+	if err != nil {
+		return "", err
+	}
+
+	encHeader := base64.RawURLEncoding.EncodeToString(headerJSON)
+	encPayload := base64.RawURLEncoding.EncodeToString(payloadJSON)
+	unsigned := encHeader + "." + encPayload
+
+	mac := hmac.New(sha256.New, []byte(secret))
+	_, _ = mac.Write([]byte(unsigned))
+	signature := base64.RawURLEncoding.EncodeToString(mac.Sum(nil))
+	return unsigned + "." + signature, nil
 }
 
 func (s *state) refresh(w http.ResponseWriter, r *http.Request) {

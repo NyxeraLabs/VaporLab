@@ -87,7 +87,7 @@ Fully dockerized infra foundation.
 JWT service with insecure modes + OIDC/OAuth support.
 
 ### ✅ Development
-- [ ] Implement JWT issuing
+- [x] Implement JWT issuing
 - [ ] Add insecure signature validation
 - [ ] Allow alg=none mode
 - [ ] Add weak secret configuration
@@ -117,7 +117,7 @@ JWT service with insecure modes + OIDC/OAuth support.
 - [ ] Add OIDC misuse demo
 
 ### 💾 Commits
-- [ ] `feat(auth): implement jwt issuing`
+- [x] `feat(auth): implement jwt issuing`
 - [ ] `feat(auth): add insecure validation`
 - [ ] `feat(auth): add secure mode toggle`
 - [ ] `feat(auth): add oidc endpoints`
