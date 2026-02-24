@@ -341,9 +341,9 @@ func (s *state) usersCollection(w http.ResponseWriter, r *http.Request) {
 	case http.MethodGet:
 		s.mu.Lock()
 		defer s.mu.Unlock()
-		out := make([]user, 0, len(s.users))
+		out := make([]any, 0, len(s.users))
 		for _, u := range s.users {
-			out = append(out, u)
+			out = append(out, userResponse(u, s.cfg.SecureMode))
 		}
 		respond(w, http.StatusOK, out)
 	case http.MethodPost:
@@ -358,11 +358,17 @@ func (s *state) usersCollection(w http.ResponseWriter, r *http.Request) {
 			in.ID = fmt.Sprintf("%d", len(s.users)+1)
 		}
 		if s.cfg.SecureMode {
+			// Secure mode: server-controlled security attributes.
+			if in.TenantID == "" {
+				in.TenantID = "tenant-a"
+			}
 			in.Role = "user"
 			in.Internal = ""
+			in.Password = ""
+			in.IsPremium = false
 		}
 		s.users[in.ID] = in
-		respond(w, http.StatusCreated, in)
+		respond(w, http.StatusCreated, userResponse(in, s.cfg.SecureMode))
 	default:
 		respond(w, http.StatusMethodNotAllowed, map[string]string{"error": "method not allowed"})
 	}
@@ -390,18 +396,47 @@ func (s *state) userByID(w http.ResponseWriter, r *http.Request) {
 		if v, ok := in["email"].(string); ok {
 			u.Email = v
 		}
+		if v, ok := in["tenant_id"].(string); ok && !s.cfg.SecureMode {
+			u.TenantID = v
+		}
 		if v, ok := in["role"].(string); ok && !s.cfg.SecureMode {
 			u.Role = v
 		}
+		if v, ok := in["internal_notes"].(string); ok && !s.cfg.SecureMode {
+			u.Internal = v
+		}
+		if v, ok := in["password"].(string); ok && !s.cfg.SecureMode {
+			u.Password = v
+		}
+		if v, ok := in["is_premium"].(bool); ok && !s.cfg.SecureMode {
+			u.IsPremium = v
+		}
 		s.users[id] = u
-		respond(w, http.StatusOK, u)
+		respond(w, http.StatusOK, userResponse(u, s.cfg.SecureMode))
 		return
 	}
-	respond(w, http.StatusOK, u)
+	respond(w, http.StatusOK, userResponse(u, s.cfg.SecureMode))
 }
 
 func (s *state) rateLimitBypass(w http.ResponseWriter, _ *http.Request) {
+	if s.cfg.SecureMode {
+		respond(w, http.StatusTooManyRequests, map[string]string{"error": "rate limit enforced"})
+		return
+	}
 	respond(w, http.StatusOK, map[string]string{"message": "bypass granted"})
+}
+
+func userResponse(u user, secure bool) any {
+	if !secure {
+		return u
+	}
+	return map[string]any{
+		"id":         u.ID,
+		"tenant_id":  u.TenantID,
+		"email":      u.Email,
+		"role":       u.Role,
+		"is_premium": u.IsPremium,
+	}
 }
 
 func (s *state) applyCoupon(w http.ResponseWriter, r *http.Request) {

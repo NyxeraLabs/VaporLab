@@ -5,3 +5,8 @@ commit,feature,sprint,status,notes
 "feat(auth): add secure mode toggle",auth-secure-mode-toggle,"Sprint 1",done,"Runtime mode endpoint added with secure validation controls"
 "feat(auth): add oidc endpoints",auth-oidc-endpoints,"Sprint 1",done,"Authorize/token/userinfo endpoints with insecure redirect behavior in vulnerable mode"
 "docs(auth): document endpoints and oidc",auth-docs-and-oidc,"Sprint 1",done,"Manual, user guide, runbook, dev logs updated"
+"feat(users): add crud",users-crud,"Sprint 2",done,"Implemented users create/list/get/update endpoints"
+"feat(users): add idor",users-idor-bola,"Sprint 2",done,"Vulnerable mode allows cross-tenant object access on user by id"
+"feat(users): add mass assignment",users-mass-assignment,"Sprint 2",done,"Vulnerable mode permits role/internal/sensitive field assignment"
+"feat(users): add rate-limit bypass",users-rate-limit-bypass,"Sprint 2",done,"Bypass endpoint enabled in vulnerable mode and blocked in secure mode"
+"docs(users): document vulnerabilities",users-docs,"Sprint 2",done,"Manuals, user guide, QA runbook, roadmap, and dev logs updated"

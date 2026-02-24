@@ -130,37 +130,37 @@ JWT service with insecure modes + OIDC/OAuth support.
 BOLA + Mass Assignment + Data Exposure.
 
 ### ✅ Development
-- [ ] Implement CRUD
-- [ ] Add IDOR/BOLA flaw
-- [ ] Add mass assignment flaw
-- [ ] Expose internal properties
-- [ ] Add multi-tenant context
-- [ ] Introduce API rate limit bypass endpoint
+- [x] Implement CRUD
+- [x] Add IDOR/BOLA flaw
+- [x] Add mass assignment flaw
+- [x] Expose internal properties
+- [x] Add multi-tenant context
+- [x] Introduce API rate limit bypass endpoint
 
 ### 🧪 Dev Testing
-- [ ] IDOR test
-- [ ] Mass assignment role escalation
-- [ ] Excessive data exposure validation
-- [ ] Rate limit bypass test
+- [x] IDOR test
+- [x] Mass assignment role escalation
+- [x] Excessive data exposure validation
+- [x] Rate limit bypass test
 
 ### 📘 Documentation
-- [ ] Document user schema
-- [ ] Document tenant model
-- [ ] Document vulnerability explanations
-- [ ] Document rate-limiting flaw
+- [x] Document user schema
+- [x] Document tenant model
+- [x] Document vulnerability explanations
+- [x] Document rate-limiting flaw
 
 ### 📖 User Guide
-- [ ] Add IDOR exploitation example
-- [ ] Add role escalation walkthrough
-- [ ] Add multi-tenant attack scenario
-- [ ] Add rate-limiting bypass demo
+- [x] Add IDOR exploitation example
+- [x] Add role escalation walkthrough
+- [x] Add multi-tenant attack scenario
+- [x] Add rate-limiting bypass demo
 
 ### 💾 Commits
-- [ ] `feat(users): add crud`
-- [ ] `feat(users): add idor`
-- [ ] `feat(users): add mass assignment`
-- [ ] `feat(users): add rate-limit bypass`
-- [ ] `docs(users): document vulnerabilities`
+- [x] `feat(users): add crud`
+- [x] `feat(users): add idor`
+- [x] `feat(users): add mass assignment`
+- [x] `feat(users): add rate-limit bypass`
+- [x] `docs(users): document vulnerabilities`
 
 ---
 
