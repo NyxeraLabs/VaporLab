@@ -24,7 +24,7 @@ jobs:
           set -e
           gofmt -w cmd pkg
           go vet ./...
-          go build ./cmd
+          go build -o /tmp/vaporlab ./cmd
           bash -n scripts/qa_tests.sh
           compose() {
             if command -v docker-compose >/dev/null 2>&1; then
