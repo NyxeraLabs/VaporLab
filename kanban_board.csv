@@ -1,3 +1,7 @@
 commit,feature,sprint,status,notes
-"feat(auth): implement jwt issuing",auth-jwt-issuing,"Sprint 1",done,"HS256 token issuance endpoint implemented with unit tests and docs updates"
-"feat(auth): add insecure validation",auth-jwt-insecure-validation,"Sprint 1",done,"Added vulnerable-mode JWT validation that skips signature verification with tests and QA cases"
+"feat(auth): implement jwt issuing",auth-jwt-issuing,"Sprint 1",done,"Implemented token issuance endpoint with claims"
+"feat(auth): add insecure validation",auth-jwt-insecure-validation,"Sprint 1",done,"Validation endpoint intentionally bypasses signature in vulnerable mode"
+"feat(auth): allow alg none mode",auth-jwt-alg-none,"Sprint 1",done,"Unsigned token support for vulnerable mode"
+"feat(auth): add secure mode toggle",auth-secure-mode-toggle,"Sprint 1",done,"Runtime mode endpoint added with secure validation controls"
+"feat(auth): add oidc endpoints",auth-oidc-endpoints,"Sprint 1",done,"Authorize/token/userinfo endpoints with insecure redirect behavior in vulnerable mode"
+"docs(auth): document endpoints and oidc",auth-docs-and-oidc,"Sprint 1",done,"Manual, user guide, runbook, dev logs updated"

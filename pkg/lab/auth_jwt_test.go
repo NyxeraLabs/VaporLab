@@ -65,7 +65,7 @@ func TestIssueJWTEndpoint(t *testing.T) {
 
 func TestIssueJWTTokenExpirationWindow(t *testing.T) {
 	now := time.Unix(1700000000, 0).UTC()
-	token, err := issueJWTToken("7", "user", "secret", now)
+	token, err := issueJWTToken("7", "user", "secret", now, "HS256", false)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -88,7 +88,7 @@ func TestIssueJWTTokenExpirationWindow(t *testing.T) {
 
 func TestValidateJWTInsecureModeAcceptsInvalidSignature(t *testing.T) {
 	h := New(config.Config{WeakJWTKey: "test-secret", SecureMode: false})
-	issued, err := issueJWTToken("42", "user", "test-secret", time.Now().UTC())
+	issued, err := issueJWTToken("42", "user", "test-secret", time.Now().UTC(), "HS256", false)
 	if err != nil {
 		t.Fatalf("unexpected issue error: %v", err)
 	}
@@ -107,7 +107,7 @@ func TestValidateJWTInsecureModeAcceptsInvalidSignature(t *testing.T) {
 
 func TestValidateJWTSecureModeRejectsInvalidSignature(t *testing.T) {
 	h := New(config.Config{WeakJWTKey: "test-secret", SecureMode: true})
-	issued, err := issueJWTToken("42", "user", "test-secret", time.Now().UTC())
+	issued, err := issueJWTToken("42", "user", "test-secret", time.Now().UTC(), "HS256", true)
 	if err != nil {
 		t.Fatalf("unexpected issue error: %v", err)
 	}
@@ -121,5 +121,52 @@ func TestValidateJWTSecureModeRejectsInvalidSignature(t *testing.T) {
 
 	if rr.Code != http.StatusUnauthorized {
 		t.Fatalf("expected status 401 for secure validation mode, got %d", rr.Code)
+	}
+}
+
+func TestIssueJWTAllowsAlgNoneInVulnerableMode(t *testing.T) {
+	h := New(config.Config{WeakJWTKey: "test-secret", SecureMode: false})
+	req := httptest.NewRequest(http.MethodPost, "/auth/jwt/issue", strings.NewReader(`{"user_id":"42","alg":"none"}`))
+	req.Header.Set("Content-Type", "application/json")
+	rr := httptest.NewRecorder()
+	h.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Fatalf("expected status 200, got %d", rr.Code)
+	}
+	var resp map[string]string
+	if err := json.Unmarshal(rr.Body.Bytes(), &resp); err != nil {
+		t.Fatalf("failed to decode response: %v", err)
+	}
+	token := resp["token"]
+	parts := strings.Split(token, ".")
+	if len(parts) != 3 {
+		t.Fatalf("expected token with 3 parts, got %d", len(parts))
+	}
+	if parts[2] != "" {
+		t.Fatalf("expected empty signature for alg=none token, got %q", parts[2])
+	}
+	headerJSON, err := base64.RawURLEncoding.DecodeString(parts[0])
+	if err != nil {
+		t.Fatalf("invalid header encoding: %v", err)
+	}
+	var header map[string]any
+	if err := json.Unmarshal(headerJSON, &header); err != nil {
+		t.Fatalf("invalid header JSON: %v", err)
+	}
+	if header["alg"] != "NONE" {
+		t.Fatalf("expected header alg NONE, got %v", header["alg"])
+	}
+}
+
+func TestIssueJWTRejectsAlgNoneInSecureMode(t *testing.T) {
+	h := New(config.Config{WeakJWTKey: "test-secret", SecureMode: true})
+	req := httptest.NewRequest(http.MethodPost, "/auth/jwt/issue", strings.NewReader(`{"user_id":"42","alg":"none"}`))
+	req.Header.Set("Content-Type", "application/json")
+	rr := httptest.NewRecorder()
+	h.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusBadRequest {
+		t.Fatalf("expected status 400 in secure mode, got %d", rr.Code)
 	}
 }

@@ -89,39 +89,39 @@ JWT service with insecure modes + OIDC/OAuth support.
 ### ✅ Development
 - [x] Implement JWT issuing
 - [x] Add insecure signature validation
-- [ ] Allow alg=none mode
-- [ ] Add weak secret configuration
-- [ ] Add refresh token endpoint
-- [ ] Add secure mode toggle
-- [ ] Add OIDC endpoints (authorize, token, userinfo)
-- [ ] Introduce vulnerable OAuth client flow
+- [x] Allow alg=none mode
+- [x] Add weak secret configuration
+- [x] Add refresh token endpoint
+- [x] Add secure mode toggle
+- [x] Add OIDC endpoints (authorize, token, userinfo)
+- [x] Introduce vulnerable OAuth client flow
 
 ### 🧪 Dev Testing
-- [ ] Invalid signature bypass test
-- [ ] Expired token acceptance test
-- [ ] Refresh replay attack test
-- [ ] OAuth token leakage test
-- [ ] OpenID misconfig test
+- [x] Invalid signature bypass test
+- [x] Expired token acceptance test
+- [x] Refresh replay attack test
+- [x] OAuth token leakage test
+- [x] OpenID misconfig test
 
 ### 📘 Documentation
-- [ ] Document Auth API endpoints
-- [ ] Add JWT flow diagram
-- [ ] Document insecure modes
-- [ ] Document secure mode behavior
-- [ ] Document OIDC endpoints and flows
+- [x] Document Auth API endpoints
+- [x] Add JWT flow diagram
+- [x] Document insecure modes
+- [x] Document secure mode behavior
+- [x] Document OIDC endpoints and flows
 
 ### 📖 User Guide
-- [ ] Add authentication walkthrough
-- [ ] Add exploit example (broken JWT)
-- [ ] Add curl examples
-- [ ] Add OIDC misuse demo
+- [x] Add authentication walkthrough
+- [x] Add exploit example (broken JWT)
+- [x] Add curl examples
+- [x] Add OIDC misuse demo
 
 ### 💾 Commits
 - [x] `feat(auth): implement jwt issuing`
 - [x] `feat(auth): add insecure validation`
-- [ ] `feat(auth): add secure mode toggle`
-- [ ] `feat(auth): add oidc endpoints`
-- [ ] `docs(auth): document endpoints and oidc`
+- [x] `feat(auth): add secure mode toggle`
+- [x] `feat(auth): add oidc endpoints`
+- [x] `docs(auth): document endpoints and oidc`
 
 ---
 
@@ -405,7 +405,7 @@ Broken function-level authorization + chains
 - [ ] Secure OIDC flows
 
 ### 📘 Documentation
-- [ ] Document secure mode behavior
+- [x] Document secure mode behavior
 - [ ] Add comparison matrix (vulnerable vs secure)
 
 ### 📖 User Guide

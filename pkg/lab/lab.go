@@ -68,6 +68,8 @@ func New(cfg config.Config) http.Handler {
 
 	mux.HandleFunc("/auth/jwt/issue", s.issueJWT)
 	mux.HandleFunc("/auth/jwt/validate", s.validateJWT)
+	mux.HandleFunc("/auth/config", s.authConfig)
+	mux.HandleFunc("/auth/mode", s.authMode)
 	mux.HandleFunc("/auth/refresh", s.refresh)
 	mux.HandleFunc("/oidc/authorize", s.oidcAuthorize)
 	mux.HandleFunc("/oidc/token", s.oidcToken)
@@ -128,17 +130,27 @@ func (s *state) issueJWT(w http.ResponseWriter, r *http.Request) {
 	if uid == "" {
 		uid = "1"
 	}
-	token, err := issueJWTToken(uid, "user", s.cfg.WeakJWTKey, time.Now().UTC())
+	alg := strings.ToUpper(strings.TrimSpace(in["alg"]))
+	if alg == "" {
+		alg = "HS256"
+	}
+	token, err := issueJWTToken(uid, "user", s.cfg.WeakJWTKey, time.Now().UTC(), alg, s.cfg.SecureMode)
 	if err != nil {
-		respond(w, http.StatusInternalServerError, map[string]string{"error": "failed to issue token"})
+		respond(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
 		return
 	}
 	respond(w, http.StatusOK, map[string]string{"token": token})
 }
 
-func issueJWTToken(userID, role, secret string, now time.Time) (string, error) {
+func issueJWTToken(userID, role, secret string, now time.Time, alg string, secureMode bool) (string, error) {
+	if alg != "HS256" && alg != "NONE" {
+		return "", fmt.Errorf("unsupported alg")
+	}
+	if secureMode && alg == "NONE" {
+		return "", fmt.Errorf("alg none disabled in secure mode")
+	}
 	header := map[string]string{
-		"alg": "HS256",
+		"alg": alg,
 		"typ": "JWT",
 	}
 	payload := map[string]any{
@@ -160,6 +172,11 @@ func issueJWTToken(userID, role, secret string, now time.Time) (string, error) {
 	encHeader := base64.RawURLEncoding.EncodeToString(headerJSON)
 	encPayload := base64.RawURLEncoding.EncodeToString(payloadJSON)
 	unsigned := encHeader + "." + encPayload
+
+	if alg == "NONE" {
+		// Intentionally vulnerable mode support: unsigned token.
+		return unsigned + ".", nil
+	}
 
 	mac := hmac.New(sha256.New, []byte(secret))
 	_, _ = mac.Write([]byte(unsigned))
@@ -194,6 +211,15 @@ func validateJWTToken(token, secret string, secureMode bool) (map[string]any, er
 	if !hmac.Equal([]byte(expected), []byte(parts[2])) {
 		return nil, fmt.Errorf("invalid signature")
 	}
+
+	// Secure mode enforces expiration, vulnerable mode intentionally does not.
+	exp, ok := payload["exp"].(float64)
+	if !ok {
+		return nil, fmt.Errorf("missing exp")
+	}
+	if time.Now().Unix() > int64(exp) {
+		return nil, fmt.Errorf("token expired")
+	}
 	return payload, nil
 }
 
@@ -218,6 +244,43 @@ func (s *state) validateJWT(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	respond(w, http.StatusOK, map[string]any{"valid": true, "payload": payload, "secure_mode": s.cfg.SecureMode})
+}
+
+func (s *state) authConfig(w http.ResponseWriter, _ *http.Request) {
+	resp := map[string]any{
+		"secure_mode": s.cfg.SecureMode,
+		"weak_secret": isWeakSecret(s.cfg.WeakJWTKey),
+	}
+	if !s.cfg.SecureMode {
+		resp["jwt_secret"] = s.cfg.WeakJWTKey
+	}
+	respond(w, http.StatusOK, resp)
+}
+
+func (s *state) authMode(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case http.MethodGet:
+		respond(w, http.StatusOK, map[string]any{"secure_mode": s.cfg.SecureMode})
+	case http.MethodPost:
+		var in map[string]bool
+		if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
+			respond(w, http.StatusBadRequest, map[string]string{"error": "invalid request body"})
+			return
+		}
+		s.cfg.SecureMode = in["secure_mode"]
+		respond(w, http.StatusOK, map[string]any{"secure_mode": s.cfg.SecureMode})
+	default:
+		respond(w, http.StatusMethodNotAllowed, map[string]string{"error": "method not allowed"})
+	}
+}
+
+func isWeakSecret(secret string) bool {
+	switch strings.ToLower(secret) {
+	case "", "weaksecret", "secret", "password", "changeme", "admin":
+		return true
+	default:
+		return len(secret) < 12
+	}
 }
 
 func (s *state) refresh(w http.ResponseWriter, r *http.Request) {

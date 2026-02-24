@@ -1,24 +1,33 @@
 # Dev Log 03 - Sprint 1 Auth Service
 
 ## Development tasks ✅
-- Implemented standards-compliant JWT issuance at `POST /auth/jwt/issue` using HS256 signing.
-- Added intentionally insecure JWT validation endpoint at `POST /auth/jwt/validate` for vulnerable mode exercises.
+- Implemented JWT issuing (`/auth/jwt/issue`) with HS256 and vulnerable `alg=none` support.
+- Implemented insecure JWT validation behavior (`/auth/jwt/validate`) with secure-mode enforcement path.
+- Added weak secret configuration visibility via `/auth/config`.
+- Added refresh token endpoint behavior and replay control (`/auth/refresh`).
+- Added runtime secure mode toggle endpoint (`/auth/mode`).
+- Implemented OIDC endpoints and vulnerable OAuth redirect behavior.
 
 ## Dev Testing tasks 🧪
-- Added unit tests for JWT issue response format and claim correctness.
-- Added validation tests proving invalid signatures are accepted in vulnerable mode and rejected in secure mode.
+- Invalid signature bypass test added and passing.
+- Expired token acceptance/rejection tests added and passing.
+- Refresh replay attack tests added and passing.
+- OAuth token leakage and OpenID misconfig tests added and passing.
 
 ## QA tasks 🧪
-- Added QA case for insecure signature validation behavior using tampered token signatures.
-- Marked QA step as ready to execute in runbook.
+- Added reproducible QA cases for all Sprint 1 auth features in runbook.
+- Marked Sprint 1 QA cases as ready to execute.
 
 ## Documentation tasks 📘
-- Updated auth service manual with JWT validation endpoint behavior.
-- Updated roadmap and kanban tracking for this task.
+- Updated auth manual for all Sprint 1 endpoints and vulnerable/secure behavior.
+- Updated roadmap checklist for Sprint 1 completion.
 
 ## User Guide updates 📖
-- Added user-facing validation walkthrough showing vulnerable-mode acceptance of tampered signatures.
+- Added authentication walkthrough, broken JWT exploit, curl examples, and OIDC misuse demo.
 
 ## Commit messages 💾
 - feat(auth): implement jwt issuing
 - feat(auth): add insecure validation
+- feat(auth): add secure mode toggle
+- feat(auth): add oidc endpoints
+- docs(auth): document endpoints and oidc
