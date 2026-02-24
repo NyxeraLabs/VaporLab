@@ -88,7 +88,7 @@ JWT service with insecure modes + OIDC/OAuth support.
 
 ### ✅ Development
 - [x] Implement JWT issuing
-- [ ] Add insecure signature validation
+- [x] Add insecure signature validation
 - [ ] Allow alg=none mode
 - [ ] Add weak secret configuration
 - [ ] Add refresh token endpoint
@@ -118,7 +118,7 @@ JWT service with insecure modes + OIDC/OAuth support.
 
 ### 💾 Commits
 - [x] `feat(auth): implement jwt issuing`
-- [ ] `feat(auth): add insecure validation`
+- [x] `feat(auth): add insecure validation`
 - [ ] `feat(auth): add secure mode toggle`
 - [ ] `feat(auth): add oidc endpoints`
 - [ ] `docs(auth): document endpoints and oidc`

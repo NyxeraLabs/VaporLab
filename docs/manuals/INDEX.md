@@ -1,6 +1,6 @@
 # Manuals Index
 
-- [Auth Service](auth-service.md)
+- [Auth Service](auth-service.md) - JWT issuing and validation flows
 - [Users Service](users-service.md)
 - [Billing Service](billing-service.md)
 - [Admin Service](admin-service.md)

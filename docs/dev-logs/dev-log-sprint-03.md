@@ -2,22 +2,23 @@
 
 ## Development tasks ✅
 - Implemented standards-compliant JWT issuance at `POST /auth/jwt/issue` using HS256 signing.
-- Added claim issuance for `sub`, `role`, `iat`, and `exp` with 10-minute token lifetime.
+- Added intentionally insecure JWT validation endpoint at `POST /auth/jwt/validate` for vulnerable mode exercises.
 
 ## Dev Testing tasks 🧪
-- Added unit test coverage for JWT response format and claim correctness.
-- Added expiration window validation test for deterministic token timing behavior.
+- Added unit tests for JWT issue response format and claim correctness.
+- Added validation tests proving invalid signatures are accepted in vulnerable mode and rejected in secure mode.
 
 ## QA tasks 🧪
-- QA case added to runbook: issue token and validate three-part JWT plus decodable payload claims.
-- Status set to ready to execute for QA environment.
+- Added QA case for insecure signature validation behavior using tampered token signatures.
+- Marked QA step as ready to execute in runbook.
 
 ## Documentation tasks 📘
-- Updated auth manual with JWT issue endpoint contract.
-- Updated manuals index and dev logs index references.
+- Updated auth service manual with JWT validation endpoint behavior.
+- Updated roadmap and kanban tracking for this task.
 
 ## User Guide updates 📖
-- Added user-facing JWT issue example and expected output guidance.
+- Added user-facing validation walkthrough showing vulnerable-mode acceptance of tampered signatures.
 
 ## Commit messages 💾
 - feat(auth): implement jwt issuing
+- feat(auth): add insecure validation

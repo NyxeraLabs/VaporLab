@@ -18,12 +18,21 @@ Issues an HS256 JWT for lab authentication flows.
 }
 ```
 
-### Claims
-- `sub`: user id
-- `role`: fixed `user` for baseline issuance
-- `iat`: issued-at UNIX timestamp
-- `exp`: expiration UNIX timestamp (`iat + 10m`)
+## Endpoint: POST /auth/jwt/validate
 
-### Notes
-- This commit introduces baseline JWT issuance only.
-- Signature validation and insecure-mode variants are tracked as follow-up roadmap commits.
+Validates a provided JWT token.
+
+### Request
+```json
+{
+  "token": "<header.payload.signature>"
+}
+```
+
+### Vulnerable mode behavior
+- Signature validation is intentionally skipped.
+- Tampered signature tokens are accepted if payload is parseable.
+
+### Secure mode behavior
+- HMAC SHA256 signature must match configured secret.
+- Invalid signatures return `401`.
