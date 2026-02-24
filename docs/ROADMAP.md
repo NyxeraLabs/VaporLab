@@ -270,26 +270,26 @@ Broken function-level authorization + chains
 Expose Billing and Admin attack flows in the frontend console after backend completion.
 
 ### ✅ Development
-- [ ] Add billing scenario widgets and forms in frontend
-- [ ] Add admin escalation workflow views
-- [ ] Add chained exploit visual timeline (BOLA → Admin → Billing → AI)
-- [ ] Add frontend state/alerts for vulnerable vs secure mode behavior
+- [x] Add billing scenario widgets and forms in frontend
+- [x] Add admin escalation workflow views
+- [x] Add chained exploit visual timeline (BOLA → Admin → Billing → AI)
+- [x] Add frontend state/alerts for vulnerable vs secure mode behavior
 
 ### 🧪 Dev Testing
-- [ ] Validate billing exploit frontend actions against API
-- [ ] Validate admin escalation frontend flow
-- [ ] Validate chain timeline updates from live responses
+- [x] Validate billing exploit frontend actions against API
+- [x] Validate admin escalation frontend flow
+- [x] Validate chain timeline updates from live responses
 
 ### 📘 Documentation
-- [ ] Document frontend billing/admin modules
-- [ ] Update architecture with phase 2 frontend components
+- [x] Document frontend billing/admin modules
+- [x] Update architecture with phase 2 frontend components
 
 ### 📖 User Guide
-- [ ] Add frontend walkthrough for business logic and admin chain abuse
+- [x] Add frontend walkthrough for business logic and admin chain abuse
 
 ### 💾 Commits
-- [ ] `feat(frontend): add billing and admin console modules`
-- [ ] `docs(frontend): document phase 2 console flows`
+- [x] `feat(frontend): add billing and admin console modules`
+- [x] `docs(frontend): document phase 2 console flows`
 
 ---
 

@@ -10,6 +10,20 @@ VaporLab is a monorepo with a Go API backend and a Next.js frontend console for 
 - Gateway (`nginx`)
 - Attack automation (`attack-scenarios/*`)
 
+## Frontend Phase 2 Modules
+- Billing attack module:
+  - Coupon replay abuse controls
+  - Export injection probe controls
+  - Webhook signature bypass controls
+- Admin escalation module:
+  - Promotion workflow controls
+  - Debug route exposure probe
+  - Tenant surface visibility probe
+- Chain timeline module:
+  - Visual steps for `BOLA -> Admin Promote -> Billing Export -> AI Query -> Chain Signal`
+- Mode-aware alerting module:
+  - Interprets response status codes based on `secure_mode`
+
 ## Data Flow
 1. Browser clients access frontend console.
 2. Frontend calls API endpoints via `NEXT_PUBLIC_API_BASE`.

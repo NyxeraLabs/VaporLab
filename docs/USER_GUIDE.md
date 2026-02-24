@@ -101,12 +101,42 @@ curl -s -X POST http://localhost:18080/ai/query -H 'content-type: application/js
 curl -s http://localhost:18080/chain/run
 ```
 
-## 8. QA Smoke Script
+## 8. Frontend Walkthrough: Billing + Admin Chain Abuse (Sprint 4.1)
+1. Open the dashboard at `http://localhost:15100`.
+2. Confirm mode banner:
+   - Vulnerable mode should show `Vulnerable Mode Enabled`.
+   - Secure mode should show `Secure Mode Enabled`.
+3. In `Billing Scenario Widgets`:
+   - Click `Replay Coupon` and observe:
+     - Vulnerable mode: replay allowed (HTTP 200).
+     - Secure mode: replay blocked (HTTP 409).
+   - Click `Run Export` using a format like `json$(echo chain)`:
+     - Vulnerable mode: command-like format accepted.
+     - Secure mode: invalid format blocked (HTTP 400).
+   - Click `Send Webhook` with empty signature:
+     - Vulnerable mode: accepted (HTTP 200).
+     - Secure mode: rejected (HTTP 401).
+4. In `Admin Escalation Workflow`:
+   - Click `Promote (No Header)`:
+     - Vulnerable mode: role escalation succeeds.
+     - Secure mode: blocked (HTTP 403).
+   - Click `Debug Route`:
+     - Vulnerable mode: debug token exposed.
+     - Secure mode: endpoint disabled (HTTP 403).
+5. Click `Run Full Chain` and verify timeline state transitions for:
+   - `GET /users/:id`
+   - `POST /admin/promote`
+   - `GET /billing/export`
+   - `POST /ai/query`
+   - `GET /chain/run`
+6. Review `Mode-Aware Alerts` to confirm each action is marked as expected or unexpected relative to active mode.
+
+## 9. QA Smoke Script
 ```bash
 bash scripts/qa_tests.sh http://localhost:18080
 ```
 
-## 9. Environment Port Sets
+## 10. Environment Port Sets
 - Dev: frontend `15100`, api `18080`
 - QA: frontend `25100`, api `28080`
 - Prod: frontend `35100`, api `38080`
