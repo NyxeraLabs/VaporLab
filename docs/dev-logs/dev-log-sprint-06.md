@@ -1,19 +1,33 @@
 # Dev Log 06 - Sprint 4 Admin Service
 
 ## Development tasks ✅
-- Added promotion and tenant endpoints, debug route behavior, and chain scenario endpoint across services.
+- Implemented admin promotion endpoint with intentionally missing auth gate in vulnerable mode.
+- Added tenant management and debug endpoints with vulnerable exposure path.
+- Implemented chain signal endpoint linking users, admin, billing, and AI flows.
 
 ## Dev testing tasks 🧪
-- Validated chain preconditions and route accessibility.
+- Added phase 2 admin coverage in `pkg/lab/billing_admin_phase2_test.go`:
+  - promote behavior in vulnerable vs secure mode
+  - debug exposure behavior
+  - chain path signal validation
+- Verified test suite passes with `go test -count=1 ./...`.
 
 ## QA tasks 🧪
-- Executed QA chain: BOLA -> Promote -> Export -> AI exploit.
+- Added Sprint 4 QA runbook cases for:
+  - function-level auth bypass (`/admin/promote`)
+  - secure-mode rejection without admin header
+  - debug route exposure
+  - full exploit chain execution
 
 ## Documentation tasks 📘
-- Documented admin privilege model, chain example, and OWASP mappings.
+- Expanded [Admin Service Manual](/home/xoce/Workspace/VaporLab/docs/manuals/admin-service.md) with endpoint contracts, vulnerable-vs-secure matrix, and exploitation examples.
+- Updated phase checklist status in [ROADMAP.md](/home/xoce/Workspace/VaporLab/docs/ROADMAP.md).
 
 ## User Guide updates 📖
-- Added privilege escalation and chained exploitation lab walkthroughs.
+- Added Sprint 4 admin walkthrough in [USER_GUIDE.md](/home/xoce/Workspace/VaporLab/docs/USER_GUIDE.md) covering promote, debug, and full chain.
 
 ## Commit messages 💾
-- feat(admin): add promote endpoint\n- feat(admin): remove auth middleware\n- feat(admin): add chain scenarios\n- docs(admin): document escalation chain
+- `feat(admin): add promote endpoint`
+- `feat(admin): remove auth middleware`
+- `feat(admin): add chain scenarios`
+- `docs(admin): document escalation chain`

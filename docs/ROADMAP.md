@@ -203,34 +203,34 @@ BOLA + Mass Assignment + Data Exposure.
 Business logic abuse + injection.
 
 ### ✅ Development
-- [ ] Add coupon engine
-- [ ] Allow coupon reuse
-- [ ] Add export endpoint
-- [ ] Add command injection flaw
-- [ ] Add webhook endpoint (no validation)
-- [ ] Add data exfil via webhook
+- [x] Add coupon engine
+- [x] Allow coupon reuse
+- [x] Add export endpoint
+- [x] Add command injection flaw
+- [x] Add webhook endpoint (no validation)
+- [x] Add data exfil via webhook
 
 ### 🧪 Dev Testing
-- [ ] Coupon abuse test
-- [ ] Injection payload test
-- [ ] Webhook signature bypass test
-- [ ] Exfiltration via webhook test
+- [x] Coupon abuse test
+- [x] Injection payload test
+- [x] Webhook signature bypass test
+- [x] Exfiltration via webhook test
 
 ### 📘 Documentation
-- [ ] Document billing flows
-- [ ] Document business logic model
-- [ ] Document injection points
-- [ ] Document webhook risks
+- [x] Document billing flows
+- [x] Document business logic model
+- [x] Document injection points
+- [x] Document webhook risks
 
 ### 📖 User Guide
-- [ ] Add coupon abuse tutorial
-- [ ] Add injection walkthrough
-- [ ] Add webhook attack demo
+- [x] Add coupon abuse tutorial
+- [x] Add injection walkthrough
+- [x] Add webhook attack demo
 
 ### 💾 Commits
-- [ ] `feat(billing): add coupon engine`
-- [ ] `feat(billing): add export injection`
-- [ ] `docs(billing): add flow documentation`
+- [x] `feat(billing): add coupon engine`
+- [x] `feat(billing): add export injection`
+- [x] `docs(billing): add flow documentation`
 
 ---
 
@@ -239,29 +239,29 @@ Business logic abuse + injection.
 Broken function-level authorization + chains
 
 ### ✅ Development
-- [ ] Add promotion endpoint
-- [ ] Add tenant management
-- [ ] Remove middleware checks
-- [ ] Add internal debug route
-- [ ] Add chained attack scenarios (BOLA → Admin → Billing → AI)
+- [x] Add promotion endpoint
+- [x] Add tenant management
+- [x] Remove middleware checks
+- [x] Add internal debug route
+- [x] Add chained attack scenarios (BOLA → Admin → Billing → AI)
 
 ### 🧪 QA
-- [ ] Chain: BOLA → Promote → Export → AI exploit
+- [x] Chain: BOLA → Promote → Export → AI exploit
 
 ### 📘 Documentation
-- [ ] Document admin privilege model
-- [ ] Document attack chain example
-- [ ] Map to OWASP 2019/2023 Top 10
+- [x] Document admin privilege model
+- [x] Document attack chain example
+- [x] Map to OWASP 2019/2023 Top 10
 
 ### 📖 User Guide
-- [ ] Add full privilege escalation walkthrough
-- [ ] Add chain exploitation lab guide
+- [x] Add full privilege escalation walkthrough
+- [x] Add chain exploitation lab guide
 
 ### 💾 Commits
-- [ ] `feat(admin): add promote endpoint`
-- [ ] `feat(admin): remove auth middleware`
-- [ ] `feat(admin): add chain scenarios`
-- [ ] `docs(admin): document escalation chain`
+- [x] `feat(admin): add promote endpoint`
+- [x] `feat(admin): remove auth middleware`
+- [x] `feat(admin): add chain scenarios`
+- [x] `docs(admin): document escalation chain`
 
 ---
 

