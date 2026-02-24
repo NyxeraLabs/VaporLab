@@ -1,13 +1,15 @@
-# SECURITY.md
-
 # Security Policy
 
-## Reporting Vulnerabilities
+VaporLab intentionally contains vulnerable-by-design behaviors for training.
 
-VaporLab is intentionally vulnerable for educational purposes. **Do not use it in production**.
+## Supported Modes
+- `SECURE_MODE=false`: vulnerable lab behavior.
+- `SECURE_MODE=true`: hardened behavior for comparison and defensive drills.
 
-If you find a security issue with the lab infrastructure itself (Docker configs, dependencies, etc.), please report it via GitHub Issues.
+## Reporting
+If you discover accidental vulnerabilities outside intended lab scenarios, open a private advisory with reproduction steps, affected endpoints, and impact.
 
-**Do not use vulnerabilities against real targets without explicit authorization.**
-
----
+## Safe Deployment
+- Use isolated network segments.
+- Never deploy with production customer data.
+- Restrict access with VPN and firewall rules.

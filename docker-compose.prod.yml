@@ -1,11 +1,55 @@
-version: "3.9"
 
 services:
-  vaporlab-api:
-    image: alpine:latest
-    container_name: vaporlab-api-prod
-    command: sh -c "while true; do sleep 3600; done"
-    ports:
-      - "8080:8080"
+  api:
+    build: .
+    container_name: vaporlab_api_prod
     environment:
-      - NODE_ENV=production
+      - SECURE_MODE=true
+      - JWT_SECRET=replace-in-prod
+      - AI_API_KEY=replace-in-prod
+    ports:
+      - "8083:8080"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8080/healthz"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  postgres:
+    image: postgres:16
+    container_name: vaporlab_postgres_prod
+    environment:
+      - POSTGRES_USER=vapor
+      - POSTGRES_PASSWORD=vapor
+      - POSTGRES_DB=vaporlab
+
+  redis:
+    image: redis:7
+    container_name: vaporlab_redis_prod
+
+  minio:
+    image: minio/minio:latest
+    container_name: vaporlab_minio_prod
+    command: server /data --console-address ":9001"
+
+  vectordb:
+    image: qdrant/qdrant:latest
+    container_name: vaporlab_qdrant_prod
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: vaporlab_prometheus_prod
+    volumes:
+      - ./infra/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: vaporlab_grafana_prod
+
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    container_name: vaporlab_jaeger_prod
+
+  gateway:
+    image: nginx:alpine
+    container_name: vaporlab_gateway_prod

@@ -1,0 +1,52 @@
+Phase,Sprint,Commit,Task,Status
+0,0.1,"chore(repo): initialize monorepo",Repository bootstrap,todo
+0,0.1,"docs: add architecture overview",Architecture documentation,todo
+0,0.1,"docs: add contributing guide",Contributing guide,todo
+0,0.1,"ci(actions): add lint pipeline",CI baseline,todo
+0,0.1,"docs(readme): add setup instructions",README setup,todo
+0,0.2,"feat(infra): add postgres",PostgreSQL integration,todo
+0,0.2,"feat(infra): add redis",Redis integration,todo
+0,0.2,"feat(infra): add minio",MinIO integration,todo
+0,0.2,"feat(infra): add vector db",Vector DB integration,todo
+0,0.2,"feat(observability): add prometheus stack",Prometheus stack,todo
+0,0.2,"docs(infra): document infrastructure",Infrastructure docs,todo
+1,1,"feat(auth): implement jwt issuing",JWT issuing,todo
+1,1,"feat(auth): add insecure validation",Insecure JWT validation,todo
+1,1,"feat(auth): add secure mode toggle",Secure mode toggle,todo
+1,1,"feat(auth): add oidc endpoints",OIDC endpoints,todo
+1,1,"docs(auth): document endpoints and oidc",Auth docs,todo
+1,2,"feat(users): add crud",Users CRUD,todo
+1,2,"feat(users): add idor",BOLA/IDOR flaw,todo
+1,2,"feat(users): add mass assignment",Mass assignment flaw,todo
+1,2,"feat(users): add rate-limit bypass",Rate-limit bypass,todo
+1,2,"docs(users): document vulnerabilities",Users docs,todo
+2,3,"feat(billing): add coupon engine",Coupon engine,todo
+2,3,"feat(billing): add export injection",Export injection,todo
+2,3,"docs(billing): add flow documentation",Billing docs,todo
+2,4,"feat(admin): add promote endpoint",Promote endpoint,todo
+2,4,"feat(admin): remove auth middleware",Broken function auth,todo
+2,4,"feat(admin): add chain scenarios",Attack chains,todo
+2,4,"docs(admin): document escalation chain",Admin docs,todo
+3,5,"feat(ssrf): add vulnerable fetch endpoint",SSRF fetch,todo
+3,5,"feat(graphql): enable deep nesting",GraphQL deep nesting,todo
+3,5,"docs(ssrf): document attack surface",SSRF docs,todo
+3,6,"feat(versioning): add legacy routes",Legacy and shadow routes,todo
+3,6,"docs(versioning): document api drift",Versioning docs,todo
+4,7,"feat(ai): add rag pipeline",RAG pipeline,todo
+4,7,"feat(ai): insecure prompt",Insecure prompt mode,todo
+4,7,"docs(ai): add threat model",AI threat docs,todo
+4,8,"feat(ai): add training upload",Training upload,todo
+4,8,"docs(ai): document exploit chain",AI chain docs,todo
+5,9,"feat(attacks): add chain scenarios",Attack automation,todo
+5,9,"docs(attacks): add playbook",Attack playbook,todo
+5,9,"feat(oidc): add vulnerable oauth lab",OIDC exploit lab,todo
+5,9,"docs(oidc): document oauth chains",OIDC docs,todo
+6,10,"feat(logging): add structured logs",Structured logs,todo
+6,10,"docs(observability): document telemetry",Observability docs,todo
+7,11,"feat(toggle): add secure mode",Global hardening toggle,todo
+7,11,"docs(security): document secure mode",Security mode docs,todo
+8,12,"ci(release): add tagging automation",Release tagging pipeline,todo
+8,12,"chore(security): generate sbom",SBOM generation,todo
+8,12,"docs: finalize documentation",Documentation finalization,todo
+8,12,"release(v1.0.0): vulnerable lab",Vulnerable release tag,todo
+8,12,"release(v2.0.0): secure mode",Secure release tag,todo

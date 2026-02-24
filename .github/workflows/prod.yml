@@ -8,17 +8,21 @@ on:
 
 jobs:
   lint-built:
-    name: Lint and Build Check
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
-      - name: Lint and build (dev baseline)
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+      - name: Lint and build
         shell: bash
         run: |
           set -e
-
+          gofmt -w cmd pkg
+          go vet ./...
+          go build ./cmd
           compose() {
             if command -v docker-compose >/dev/null 2>&1; then
               docker-compose "$@"
@@ -26,23 +30,18 @@ jobs:
               docker compose "$@"
             fi
           }
-
           compose -f docker-compose.dev.yml config >/dev/null
-          compose -f docker-compose.dev.yml build
 
   dev-build:
-    name: Dev Build
     runs-on: ubuntu-latest
     needs: lint-built
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
-      - name: Build dev stack
+      - name: Build dev image
         shell: bash
         run: |
           set -e
-
           compose() {
             if command -v docker-compose >/dev/null 2>&1; then
               docker-compose "$@"
@@ -50,12 +49,9 @@ jobs:
               docker compose "$@"
             fi
           }
-
-          compose -f docker-compose.dev.yml config >/dev/null
-          compose -f docker-compose.dev.yml build
+          compose -f docker-compose.dev.yml build api
 
   prod-deploy:
-    name: Production Deploy
     runs-on: ubuntu-latest
     needs:
       - lint-built
@@ -63,12 +59,10 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
-      - name: Build production stack
+      - name: Build prod stack
         shell: bash
         run: |
           set -e
-
           compose() {
             if command -v docker-compose >/dev/null 2>&1; then
               docker-compose "$@"
@@ -76,67 +70,52 @@ jobs:
               docker compose "$@"
             fi
           }
-
           compose -f docker-compose.prod.yml config >/dev/null
           compose -f docker-compose.prod.yml build
-
-      - name: Optional Docker image push (commented)
+      - name: Optional docker push
         shell: bash
         run: |
           set -e
-          echo "Docker image push is intentionally disabled."
+          echo "Docker push disabled by default"
           # docker login -u "${{ secrets.DOCKER_USER }}" -p "${{ secrets.DOCKER_TOKEN }}"
           # docker-compose -f docker-compose.prod.yml push
 
   auto-tag:
-    name: Auto Increment Patch Tag
     runs-on: ubuntu-latest
     needs: prod-deploy
     permissions:
       contents: write
     steps:
-      - name: Checkout repository with tags
+      - name: Checkout with full history
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
-      - name: Configure Git identity
+      - name: Configure git user
         shell: bash
         run: |
           set -e
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-
-      - name: Create and push next patch tag
+      - name: Bump patch tag and push
         shell: bash
         run: |
           set -e
-
           git fetch --tags --force
-
           latest_tag=$(git tag -l 'v*' --sort=-v:refname | head -n 1)
           if [ -z "$latest_tag" ]; then
             latest_tag="v0.0.0"
           fi
-
           version="${latest_tag#v}"
           IFS='.' read -r major minor patch <<< "$version"
-
           if [ -z "$major" ] || [ -z "$minor" ] || [ -z "$patch" ]; then
-            echo "Invalid latest tag format: $latest_tag"
+            echo "invalid latest tag: $latest_tag"
             exit 1
           fi
-
           next_patch=$((patch + 1))
           new_tag="v${major}.${minor}.${next_patch}"
-
-          echo "Latest tag: $latest_tag"
-          echo "New tag: $new_tag"
-
           if git rev-parse "$new_tag" >/dev/null 2>&1; then
-            echo "Tag already exists: $new_tag"
+            echo "tag already exists: $new_tag"
             exit 1
           fi
-
           git tag "$new_tag"
           git push origin "$new_tag"

@@ -1,11 +1,50 @@
-version: "3.9"
 
 services:
-  vaporlab-api:
-    image: alpine:latest
-    container_name: vaporlab-api-qa
-    command: sh -c "while true; do sleep 3600; done"
-    ports:
-      - "8080:8080"
+  api:
+    build: .
+    container_name: vaporlab_api_qa
     environment:
-      - NODE_ENV=quality-assurance
+      - SECURE_MODE=false
+      - JWT_SECRET=weaksecret
+      - AI_API_KEY=hardcoded-demo-ai-key
+    ports:
+      - "8082:8080"
+
+  postgres:
+    image: postgres:16
+    container_name: vaporlab_postgres_qa
+    environment:
+      - POSTGRES_USER=vapor
+      - POSTGRES_PASSWORD=vapor
+      - POSTGRES_DB=vaporlab
+
+  redis:
+    image: redis:7
+    container_name: vaporlab_redis_qa
+
+  minio:
+    image: minio/minio:latest
+    container_name: vaporlab_minio_qa
+    command: server /data --console-address ":9001"
+
+  vectordb:
+    image: qdrant/qdrant:latest
+    container_name: vaporlab_qdrant_qa
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: vaporlab_prometheus_qa
+    volumes:
+      - ./infra/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: vaporlab_grafana_qa
+
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    container_name: vaporlab_jaeger_qa
+
+  gateway:
+    image: nginx:alpine
+    container_name: vaporlab_gateway_qa

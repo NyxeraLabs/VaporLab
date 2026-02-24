@@ -8,17 +8,21 @@ on:
 
 jobs:
   lint-built:
-    name: Lint and Build Check
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
-      - name: Lint and build (qa)
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+      - name: Lint and build
         shell: bash
         run: |
           set -e
-
+          gofmt -w cmd pkg
+          go vet ./...
+          go build ./cmd
           compose() {
             if command -v docker-compose >/dev/null 2>&1; then
               docker-compose "$@"
@@ -26,23 +30,22 @@ jobs:
               docker compose "$@"
             fi
           }
-
           compose -f docker-compose.qa.yml config >/dev/null
-          compose -f docker-compose.qa.yml build
 
-  qa-build:
-    name: QA Build
+  qa-tests:
     runs-on: ubuntu-latest
     needs: lint-built
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
-      - name: Build QA stack
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+      - name: Build qa image
         shell: bash
         run: |
           set -e
-
           compose() {
             if command -v docker-compose >/dev/null 2>&1; then
               docker-compose "$@"
@@ -50,6 +53,10 @@ jobs:
               docker compose "$@"
             fi
           }
-
-          compose -f docker-compose.qa.yml config >/dev/null
-          compose -f docker-compose.qa.yml build
+          compose -f docker-compose.qa.yml build api
+      - name: Run QA checks
+        shell: bash
+        run: |
+          set -e
+          bash -n scripts/qa_tests.sh
+          scripts/update_qa_runbook.sh pass "qa workflow checks completed"

@@ -1,15 +1,5 @@
-## DISCLAIMER.md
+# Disclaimer
 
-# Legal Disclaimer
+VaporLab is an educational offensive security lab. It includes insecure patterns by design, including weak authentication, broken authorization, SSRF primitives, AI prompt injection paths, and exploit chains.
 
-**VaporLab** is a **simulated API security testing environment**.
-
-* This software is provided **for educational, research, and portfolio purposes only**.
-* Any resemblance to real systems is purely for learning.
-* The authors assume **no liability for misuse** of this software.
-* Always obtain explicit written authorization before testing any real system.
-* Misuse of this lab for illegal activity is strictly prohibited.
-
-By using VaporLab, you agree to these terms.
-
----
+Use only in controlled environments where you have explicit authorization.

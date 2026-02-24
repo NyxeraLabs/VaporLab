@@ -8,17 +8,21 @@ on:
 
 jobs:
   lint-built:
-    name: Lint and Build Check
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
-      - name: Lint and build (dev)
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+      - name: Lint and build
         shell: bash
         run: |
           set -e
-
+          gofmt -w cmd pkg
+          go vet ./...
+          go build ./cmd
           compose() {
             if command -v docker-compose >/dev/null 2>&1; then
               docker-compose "$@"
@@ -26,23 +30,18 @@ jobs:
               docker compose "$@"
             fi
           }
-
           compose -f docker-compose.dev.yml config >/dev/null
-          compose -f docker-compose.dev.yml build
 
   dev-build:
-    name: Dev Build
     runs-on: ubuntu-latest
     needs: lint-built
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
       - name: Build dev stack
         shell: bash
         run: |
           set -e
-
           compose() {
             if command -v docker-compose >/dev/null 2>&1; then
               docker-compose "$@"
@@ -50,6 +49,4 @@ jobs:
               docker compose "$@"
             fi
           }
-
-          compose -f docker-compose.dev.yml config >/dev/null
           compose -f docker-compose.dev.yml build

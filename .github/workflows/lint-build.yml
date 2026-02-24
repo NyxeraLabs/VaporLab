@@ -10,19 +10,22 @@ on:
 
 jobs:
   lint-built:
-    name: Lint and Build Verification
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
-      - name: Lint scripts and validate compose files
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+      - name: Validate project
         shell: bash
         run: |
           set -e
-
+          gofmt -w cmd pkg
+          go vet ./...
+          go build ./cmd
           bash -n scripts/qa_tests.sh
-
           compose() {
             if command -v docker-compose >/dev/null 2>&1; then
               docker-compose "$@"
@@ -30,22 +33,6 @@ jobs:
               docker compose "$@"
             fi
           }
-
           compose -f docker-compose.dev.yml config >/dev/null
           compose -f docker-compose.qa.yml config >/dev/null
           compose -f docker-compose.prod.yml config >/dev/null
-
-      - name: Build smoke check (dev)
-        shell: bash
-        run: |
-          set -e
-
-          compose() {
-            if command -v docker-compose >/dev/null 2>&1; then
-              docker-compose "$@"
-            else
-              docker compose "$@"
-            fi
-          }
-
-          compose -f docker-compose.dev.yml build --no-cache

@@ -1,6 +1,27 @@
+# Go build artifacts
 /bin/
-/pkg/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+
+# Dependency/vendor
 /vendor/
-/.env
+
+# Local environment and caches
+/.cache/
+.env
+.env.*
+
+# Logs and temp
 *.log
 *.tmp
+/tmp/
+
+# Editor/OS
+.DS_Store
+.idea/
+.vscode/

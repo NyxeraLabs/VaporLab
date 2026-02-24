@@ -1,0 +1,18 @@
+repos:
+  - repo: local
+    hooks:
+      - id: gofmt
+        name: gofmt
+        entry: bash -c 'gofmt -w cmd pkg'
+        language: system
+        pass_filenames: false
+      - id: govet
+        name: go vet
+        entry: go vet ./...
+        language: system
+        pass_filenames: false
+      - id: qa-script-shellcheck
+        name: shell syntax check
+        entry: bash -n scripts/qa_tests.sh
+        language: system
+        pass_filenames: false
