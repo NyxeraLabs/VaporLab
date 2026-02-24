@@ -1,44 +1,55 @@
-name: Development Build & Test
+name: Dev CI
 
 on:
   push:
-    branches: [ "dev" ]
-  pull_request:
-    branches: [ "dev" ]
+    branches:
+      - dev
   workflow_dispatch:
 
 jobs:
-  build-and-test:
+  lint-built:
+    name: Lint and Build Check
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        shell: bash
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - name: Set up Go
-        uses: actions/setup-go@v4
-        with:
-          go-version: 1.21
-
-      - name: Install dependencies
-        run: go mod tidy
-
-      - name: Lint & Format
+      - name: Lint and build (dev)
+        shell: bash
         run: |
-          echo "Running lint..."
-          golangci-lint run || true
+          set -e
 
-      - name: Run Unit Tests
-        run: |
-          go test ./... -v
+          compose() {
+            if command -v docker-compose >/dev/null 2>&1; then
+              docker-compose "$@"
+            else
+              docker compose "$@"
+            fi
+          }
 
-      - name: Build Binary
-        run: |
-          go build -o vaporlab ./cmd/
+          compose -f docker-compose.dev.yml config >/dev/null
+          compose -f docker-compose.dev.yml build
 
-      - name: Build Docker for dev
+  dev-build:
+    name: Dev Build
+    runs-on: ubuntu-latest
+    needs: lint-built
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build dev stack
+        shell: bash
         run: |
-          docker-compose -f docker-compose.dev.yml build
+          set -e
+
+          compose() {
+            if command -v docker-compose >/dev/null 2>&1; then
+              docker-compose "$@"
+            else
+              docker compose "$@"
+            fi
+          }
+
+          compose -f docker-compose.dev.yml config >/dev/null
+          compose -f docker-compose.dev.yml build

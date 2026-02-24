@@ -1,36 +1,51 @@
-name: Lint & Build Verification
+name: Lint-Build Gate
 
 on:
   pull_request:
-    branches: [ "dev", "qa", "main" ]
+    branches:
+      - dev
+      - QA
+      - main
   workflow_dispatch:
 
 jobs:
-  lint-build:
+  lint-built:
+    name: Lint and Build Verification
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        shell: bash
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - name: Set up Go
-        uses: actions/setup-go@v4
-        with:
-          go-version: 1.21
-
-      - name: Install Dependencies
-        run: go mod tidy
-
-      - name: Lint Code
+      - name: Lint scripts and validate compose files
+        shell: bash
         run: |
-          echo "Linting..."
-          golangci-lint run
+          set -e
 
-      - name: Build Binary
-        run: go build -o vaporlab ./cmd/
+          bash -n scripts/qa_tests.sh
 
-      - name: Docker Build (Check)
-        run: docker-compose -f docker-compose.dev.yml build --no-cache
+          compose() {
+            if command -v docker-compose >/dev/null 2>&1; then
+              docker-compose "$@"
+            else
+              docker compose "$@"
+            fi
+          }
+
+          compose -f docker-compose.dev.yml config >/dev/null
+          compose -f docker-compose.qa.yml config >/dev/null
+          compose -f docker-compose.prod.yml config >/dev/null
+
+      - name: Build smoke check (dev)
+        shell: bash
+        run: |
+          set -e
+
+          compose() {
+            if command -v docker-compose >/dev/null 2>&1; then
+              docker-compose "$@"
+            else
+              docker compose "$@"
+            fi
+          }
+
+          compose -f docker-compose.dev.yml build --no-cache

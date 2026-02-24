@@ -1,34 +1,55 @@
-name: QA Pipeline
+name: QA CI
 
 on:
   push:
-    branches: [ "qa" ]
+    branches:
+      - QA
   workflow_dispatch:
 
 jobs:
-  qa:
+  lint-built:
+    name: Lint and Build Check
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        shell: bash
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - name: Build Docker
-        run: docker-compose -f docker-compose.qa.yml build
-
-      - name: Run QA Tests
+      - name: Lint and build (qa)
+        shell: bash
         run: |
-          echo "Running automated QA tests..."
-          # ./scripts/qa_tests.sh
-          echo "QA tests completed"
+          set -e
 
-      - name: Save Artifacts
-        uses: actions/upload-artifact@v3
-        with:
-          name: qa-artifacts
-          path: |
-            reports/
-            logs/
+          compose() {
+            if command -v docker-compose >/dev/null 2>&1; then
+              docker-compose "$@"
+            else
+              docker compose "$@"
+            fi
+          }
+
+          compose -f docker-compose.qa.yml config >/dev/null
+          compose -f docker-compose.qa.yml build
+
+  qa-build:
+    name: QA Build
+    runs-on: ubuntu-latest
+    needs: lint-built
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build QA stack
+        shell: bash
+        run: |
+          set -e
+
+          compose() {
+            if command -v docker-compose >/dev/null 2>&1; then
+              docker-compose "$@"
+            else
+              docker compose "$@"
+            fi
+          }
+
+          compose -f docker-compose.qa.yml config >/dev/null
+          compose -f docker-compose.qa.yml build

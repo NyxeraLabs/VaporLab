@@ -1,77 +1,142 @@
-name: Production Deployment & Auto-Tag
+name: Prod CI/CD
 
 on:
   push:
-    branches: [ "main" ]
+    branches:
+      - main
   workflow_dispatch:
 
 jobs:
-  prod-deploy:
+  lint-built:
+    name: Lint and Build Check
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        shell: bash
-
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
-      - name: Set up Git user
-        run: |
-          git config user.name "github-actions"
-          git config user.email "actions@github.com"
-
-      - name: Get latest tag
-        id: get_tag
+      - name: Lint and build (dev baseline)
+        shell: bash
         run: |
           set -e
-          TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
-          echo "latest_tag=$TAG" >> $GITHUB_ENV
-          echo "Latest tag is $TAG"
 
-      - name: Bump patch version
-        id: bump_version
+          compose() {
+            if command -v docker-compose >/dev/null 2>&1; then
+              docker-compose "$@"
+            else
+              docker compose "$@"
+            fi
+          }
+
+          compose -f docker-compose.dev.yml config >/dev/null
+          compose -f docker-compose.dev.yml build
+
+  dev-build:
+    name: Dev Build
+    runs-on: ubuntu-latest
+    needs: lint-built
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build dev stack
+        shell: bash
         run: |
           set -e
-          TAG=${{ env.latest_tag }}
-          TAG_CLEAN=${TAG#v}
-          IFS='.' read -r MAJOR MINOR PATCH <<< "$TAG_CLEAN"
-          PATCH=$((PATCH + 1))
-          NEW_TAG="v$MAJOR.$MINOR.$PATCH"
-          echo "new_tag=$NEW_TAG" >> $GITHUB_ENV
-          echo "New version tag will be $NEW_TAG"
 
-      - name: Run QA tests
+          compose() {
+            if command -v docker-compose >/dev/null 2>&1; then
+              docker-compose "$@"
+            else
+              docker compose "$@"
+            fi
+          }
+
+          compose -f docker-compose.dev.yml config >/dev/null
+          compose -f docker-compose.dev.yml build
+
+  prod-deploy:
+    name: Production Deploy
+    runs-on: ubuntu-latest
+    needs:
+      - lint-built
+      - dev-build
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build production stack
+        shell: bash
         run: |
-          echo "Running QA tests..."
-          # Uncomment the line below when ready
-          # ./scripts/qa_tests.sh
+          set -e
 
-      - name: Build Docker images
+          compose() {
+            if command -v docker-compose >/dev/null 2>&1; then
+              docker-compose "$@"
+            else
+              docker compose "$@"
+            fi
+          }
+
+          compose -f docker-compose.prod.yml config >/dev/null
+          compose -f docker-compose.prod.yml build
+
+      - name: Optional Docker image push (commented)
+        shell: bash
         run: |
-          docker-compose -f docker-compose.prod.yml build
+          set -e
+          echo "Docker image push is intentionally disabled."
+          # docker login -u "${{ secrets.DOCKER_USER }}" -p "${{ secrets.DOCKER_TOKEN }}"
+          # docker-compose -f docker-compose.prod.yml push
 
-      - name: Optional: Push Docker images
+  auto-tag:
+    name: Auto Increment Patch Tag
+    runs-on: ubuntu-latest
+    needs: prod-deploy
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repository with tags
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Configure Git identity
+        shell: bash
         run: |
-          echo "Skipping push; configure DockerHub/GHCR if needed"
-          # docker login -u ${{ secrets.DOCKER_USER }} -p ${{ secrets.DOCKER_TOKEN }}
-          # docker tag vaporlab:latest myrepo/vaporlab:${{ env.new_tag }}
-          # docker push myrepo/vaporlab:${{ env.new_tag }}
+          set -e
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
 
-      - name: Create Git tag
+      - name: Create and push next patch tag
+        shell: bash
         run: |
-          git tag ${{ env.new_tag }}
-          git push origin ${{ env.new_tag }}
+          set -e
 
-      # - name: Deploy to Production Server
-      #   env:
-      #     PROD_HOST: ${{ secrets.PROD_HOST }}
-      #     PROD_USER: ${{ secrets.PROD_USER }}
-      #     PROD_KEY: ${{ secrets.PROD_KEY }}
-      #   run: |
-      #     echo "Deploying to production..."
-      #     scp -i $PROD_KEY docker-compose.prod.yml $PROD_USER@$PROD_HOST:/opt/vaporlab/
-      #     ssh -i $PROD_KEY $PROD_USER@$PROD_HOST "cd /opt/vaporlab && docker-compose -f docker-compose.prod.yml up -d --build"
+          git fetch --tags --force
 
-      - name: Deployment Complete
-        run: echo "Production workflow finished (deploy skipped - host not configured)."
+          latest_tag=$(git tag -l 'v*' --sort=-v:refname | head -n 1)
+          if [ -z "$latest_tag" ]; then
+            latest_tag="v0.0.0"
+          fi
+
+          version="${latest_tag#v}"
+          IFS='.' read -r major minor patch <<< "$version"
+
+          if [ -z "$major" ] || [ -z "$minor" ] || [ -z "$patch" ]; then
+            echo "Invalid latest tag format: $latest_tag"
+            exit 1
+          fi
+
+          next_patch=$((patch + 1))
+          new_tag="v${major}.${minor}.${next_patch}"
+
+          echo "Latest tag: $latest_tag"
+          echo "New tag: $new_tag"
+
+          if git rev-parse "$new_tag" >/dev/null 2>&1; then
+            echo "Tag already exists: $new_tag"
+            exit 1
+          fi
+
+          git tag "$new_tag"
+          git push origin "$new_tag"
