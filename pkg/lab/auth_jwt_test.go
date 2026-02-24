@@ -85,3 +85,41 @@ func TestIssueJWTTokenExpirationWindow(t *testing.T) {
 		t.Fatalf("unexpected exp: %v", payload["exp"])
 	}
 }
+
+func TestValidateJWTInsecureModeAcceptsInvalidSignature(t *testing.T) {
+	h := New(config.Config{WeakJWTKey: "test-secret", SecureMode: false})
+	issued, err := issueJWTToken("42", "user", "test-secret", time.Now().UTC())
+	if err != nil {
+		t.Fatalf("unexpected issue error: %v", err)
+	}
+	parts := strings.Split(issued, ".")
+	tampered := parts[0] + "." + parts[1] + ".tampered-signature"
+
+	req := httptest.NewRequest(http.MethodPost, "/auth/jwt/validate", strings.NewReader(`{"token":"`+tampered+`"}`))
+	req.Header.Set("Content-Type", "application/json")
+	rr := httptest.NewRecorder()
+	h.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Fatalf("expected status 200 for insecure validation mode, got %d", rr.Code)
+	}
+}
+
+func TestValidateJWTSecureModeRejectsInvalidSignature(t *testing.T) {
+	h := New(config.Config{WeakJWTKey: "test-secret", SecureMode: true})
+	issued, err := issueJWTToken("42", "user", "test-secret", time.Now().UTC())
+	if err != nil {
+		t.Fatalf("unexpected issue error: %v", err)
+	}
+	parts := strings.Split(issued, ".")
+	tampered := parts[0] + "." + parts[1] + ".tampered-signature"
+
+	req := httptest.NewRequest(http.MethodPost, "/auth/jwt/validate", strings.NewReader(`{"token":"`+tampered+`"}`))
+	req.Header.Set("Content-Type", "application/json")
+	rr := httptest.NewRecorder()
+	h.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusUnauthorized {
+		t.Fatalf("expected status 401 for secure validation mode, got %d", rr.Code)
+	}
+}

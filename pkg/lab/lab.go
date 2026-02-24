@@ -67,6 +67,7 @@ func New(cfg config.Config) http.Handler {
 	mux.HandleFunc("/metrics", s.metrics)
 
 	mux.HandleFunc("/auth/jwt/issue", s.issueJWT)
+	mux.HandleFunc("/auth/jwt/validate", s.validateJWT)
 	mux.HandleFunc("/auth/refresh", s.refresh)
 	mux.HandleFunc("/oidc/authorize", s.oidcAuthorize)
 	mux.HandleFunc("/oidc/token", s.oidcToken)
@@ -164,6 +165,59 @@ func issueJWTToken(userID, role, secret string, now time.Time) (string, error) {
 	_, _ = mac.Write([]byte(unsigned))
 	signature := base64.RawURLEncoding.EncodeToString(mac.Sum(nil))
 	return unsigned + "." + signature, nil
+}
+
+func validateJWTToken(token, secret string, secureMode bool) (map[string]any, error) {
+	parts := strings.Split(token, ".")
+	if len(parts) != 3 {
+		return nil, fmt.Errorf("invalid token format")
+	}
+
+	payloadJSON, err := base64.RawURLEncoding.DecodeString(parts[1])
+	if err != nil {
+		return nil, fmt.Errorf("invalid payload encoding")
+	}
+	var payload map[string]any
+	if err := json.Unmarshal(payloadJSON, &payload); err != nil {
+		return nil, fmt.Errorf("invalid payload JSON")
+	}
+
+	if !secureMode {
+		// Intentional vulnerability: signature is not validated in lab vulnerable mode.
+		return payload, nil
+	}
+
+	unsigned := parts[0] + "." + parts[1]
+	mac := hmac.New(sha256.New, []byte(secret))
+	_, _ = mac.Write([]byte(unsigned))
+	expected := base64.RawURLEncoding.EncodeToString(mac.Sum(nil))
+	if !hmac.Equal([]byte(expected), []byte(parts[2])) {
+		return nil, fmt.Errorf("invalid signature")
+	}
+	return payload, nil
+}
+
+func (s *state) validateJWT(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		respond(w, http.StatusMethodNotAllowed, map[string]string{"error": "method not allowed"})
+		return
+	}
+	var in map[string]string
+	if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
+		respond(w, http.StatusBadRequest, map[string]string{"error": "invalid request body"})
+		return
+	}
+	token := in["token"]
+	if token == "" {
+		respond(w, http.StatusBadRequest, map[string]string{"error": "missing token"})
+		return
+	}
+	payload, err := validateJWTToken(token, s.cfg.WeakJWTKey, s.cfg.SecureMode)
+	if err != nil {
+		respond(w, http.StatusUnauthorized, map[string]string{"error": err.Error()})
+		return
+	}
+	respond(w, http.StatusOK, map[string]any{"valid": true, "payload": payload, "secure_mode": s.cfg.SecureMode})
 }
 
 func (s *state) refresh(w http.ResponseWriter, r *http.Request) {
