@@ -43,4 +43,4 @@ This project is intentionally vulnerable in default mode and must be deployed on
 - [Dev Logs](docs/dev-logs/INDEX.md)
 
 ## License
-Licensed under MIT. See [LICENSE](LICENSE).
+Licensed under Apache-2.0. See [LICENSE](LICENSE).
