@@ -1,7 +1,8 @@
 # Manuals Index
 
 - [Auth Service](auth-service.md)
-- [Users Service](users-service.md) - CRUD, IDOR/BOLA, mass assignment, tenant controls
+- [Users Service](users-service.md)
+- [Frontend Console](frontend-console.md)
 - [Billing Service](billing-service.md)
 - [Admin Service](admin-service.md)
 - [SSRF and Resource Abuse](ssrf-resource-abuse.md)

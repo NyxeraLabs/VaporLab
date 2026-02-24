@@ -125,6 +125,38 @@ JWT service with insecure modes + OIDC/OAuth support.
 
 ---
 
+## 🚀 Sprint 1.1 – Frontend Console & Port Compatibility
+### 🎯 Goal
+Deliver a professional web frontend and non-standard host port strategy across all environments.
+
+### ✅ Development
+- [x] Implement Next.js + Tailwind frontend console
+- [x] Connect frontend to VaporLab API endpoints
+- [x] Dockerize frontend service
+- [x] Add frontend service to dev, qa, and prod compose files
+- [x] Remap all exposed host ports to non-standard values
+
+### 🧪 Dev Testing
+- [x] Validate compose config for dev/qa/prod
+- [x] Validate backend compile/tests after port remapping
+- [x] Validate frontend container build configuration
+
+### 📘 Documentation
+- [x] Document frontend architecture and usage
+- [x] Document non-standard host port map
+- [x] Update infra and deployment docs for new ports
+
+### 📖 User Guide
+- [x] Add frontend access and dashboard walkthrough
+- [x] Update API examples to new host ports
+
+### 💾 Commits
+- [x] `feat(frontend): add nextjs tailwind operator console`
+- [x] `feat(infra): remap host ports to non-standard ranges`
+- [x] `docs(frontend): document dashboard and port compatibility`
+
+---
+
 ## 🚀 Sprint 2 – Users Service
 ### 🎯 Goal
 BOLA + Mass Assignment + Data Exposure.
@@ -233,6 +265,34 @@ Broken function-level authorization + chains
 
 ---
 
+## 🚀 Sprint 4.1 – Frontend Integration (Phase 2)
+### 🎯 Goal
+Expose Billing and Admin attack flows in the frontend console after backend completion.
+
+### ✅ Development
+- [ ] Add billing scenario widgets and forms in frontend
+- [ ] Add admin escalation workflow views
+- [ ] Add chained exploit visual timeline (BOLA → Admin → Billing → AI)
+- [ ] Add frontend state/alerts for vulnerable vs secure mode behavior
+
+### 🧪 Dev Testing
+- [ ] Validate billing exploit frontend actions against API
+- [ ] Validate admin escalation frontend flow
+- [ ] Validate chain timeline updates from live responses
+
+### 📘 Documentation
+- [ ] Document frontend billing/admin modules
+- [ ] Update architecture with phase 2 frontend components
+
+### 📖 User Guide
+- [ ] Add frontend walkthrough for business logic and admin chain abuse
+
+### 💾 Commits
+- [ ] `feat(frontend): add billing and admin console modules`
+- [ ] `docs(frontend): document phase 2 console flows`
+
+---
+
 # 🌐 PHASE 3 – OWASP 2023 EXPANSION
 
 ## 🚀 Sprint 5 – SSRF & Resource Abuse
@@ -286,6 +346,32 @@ Broken function-level authorization + chains
 ### 💾 Commits
 - [ ] `feat(versioning): add legacy routes`
 - [ ] `docs(versioning): document api drift`
+
+---
+
+## 🚀 Sprint 6.1 – Frontend Integration (Phase 3)
+### 🎯 Goal
+Add frontend views for OWASP 2023 discovery and resource abuse surfaces after API rollout.
+
+### ✅ Development
+- [ ] Add SSRF/resource abuse dashboard cards
+- [ ] Add API inventory explorer for v1/v2/beta/internal routes
+- [ ] Add request builders for discovery and misuse scenarios
+
+### 🧪 Dev Testing
+- [ ] Validate frontend SSRF/resource abuse interactions
+- [ ] Validate inventory explorer route discovery behavior
+
+### 📘 Documentation
+- [ ] Document phase 3 frontend modules and data flows
+- [ ] Update manuals with frontend-driven OWASP 2023 labs
+
+### 📖 User Guide
+- [ ] Add frontend lab walkthrough for SSRF, DoS, and inventory discovery
+
+### 💾 Commits
+- [ ] `feat(frontend): add owasp-2023 scenario console`
+- [ ] `docs(frontend): document phase 3 exploit views`
 
 ---
 
@@ -343,6 +429,32 @@ Broken function-level authorization + chains
 
 ---
 
+## 🚀 Sprint 8.1 – Frontend Integration (Phase 4)
+### 🎯 Goal
+Provide a dedicated frontend AI exploitation cockpit after AI endpoints are implemented.
+
+### ✅ Development
+- [ ] Add prompt injection studio and response inspector
+- [ ] Add RAG/vector poisoning controls and trace output
+- [ ] Add AI chaining execution board with step-by-step results
+
+### 🧪 Dev Testing
+- [ ] Validate prompt injection flows from frontend to API
+- [ ] Validate vector poisoning and chain execution widgets
+
+### 📘 Documentation
+- [ ] Document AI cockpit architecture and usage
+- [ ] Update threat model docs with frontend attack paths
+
+### 📖 User Guide
+- [ ] Add frontend AI lab exercises and misuse scenarios
+
+### 💾 Commits
+- [ ] `feat(frontend): add ai exploitation cockpit`
+- [ ] `docs(frontend): document phase 4 ai console`
+
+---
+
 # 🔗 PHASE 5 – EXPLOIT FRAMEWORK & OIDC
 ## 🚀 Sprint 9 – Automation & Scoring
 ### ✅ Development
@@ -371,6 +483,32 @@ Broken function-level authorization + chains
 
 ---
 
+## 🚀 Sprint 9.1 – Frontend Integration (Phase 5)
+### 🎯 Goal
+Expose attack automation and scoring controls in the frontend after framework APIs are ready.
+
+### ✅ Development
+- [ ] Add one-click automation runner from frontend
+- [ ] Add score/benchmark dashboard and trend cards
+- [ ] Add OIDC/OAuth exploit flow visualizer
+
+### 🧪 Dev Testing
+- [ ] Validate automation trigger and result rendering
+- [ ] Validate scoring output consistency in frontend
+
+### 📘 Documentation
+- [ ] Document frontend automation/scoring modules
+- [ ] Update attack playbook with frontend execution option
+
+### 📖 User Guide
+- [ ] Add frontend automation and scoring tutorial
+
+### 💾 Commits
+- [ ] `feat(frontend): add attack automation dashboard`
+- [ ] `docs(frontend): document phase 5 automation ui`
+
+---
+
 # 📊 PHASE 6 – OBSERVABILITY
 ## 🚀 Sprint 10 – Logging & Metrics
 ### ✅ Development
@@ -390,6 +528,32 @@ Broken function-level authorization + chains
 ### 💾 Commits
 - [ ] `feat(logging): add structured logs`
 - [ ] `docs(observability): document telemetry`
+
+---
+
+## 🚀 Sprint 10.1 – Frontend Integration (Phase 6)
+### 🎯 Goal
+Add observability and blind-spot visibility panels to the frontend console after telemetry APIs are ready.
+
+### ✅ Development
+- [ ] Add metrics/trace summary panels in frontend
+- [ ] Add blind-spot indicators and missing-telemetry flags
+- [ ] Add incident timeline widget from logged attack events
+
+### 🧪 Dev Testing
+- [ ] Validate metrics and trace rendering from live endpoints
+- [ ] Validate blind-spot indicators under expected gaps
+
+### 📘 Documentation
+- [ ] Document observability frontend modules and limitations
+- [ ] Update architecture with telemetry UI components
+
+### 📖 User Guide
+- [ ] Add frontend blue-team validation walkthrough
+
+### 💾 Commits
+- [ ] `feat(frontend): add observability dashboard`
+- [ ] `docs(frontend): document phase 6 telemetry ui`
 
 ---
 
@@ -415,6 +579,32 @@ Broken function-level authorization + chains
 ### 💾 Commits
 - [ ] `feat(toggle): add secure mode`
 - [ ] `docs(security): document secure mode`
+
+---
+
+## 🚀 Sprint 11.1 – Frontend Integration (Phase 7)
+### 🎯 Goal
+Add secure mode controls and vulnerable-vs-secure comparison UX to the frontend.
+
+### ✅ Development
+- [ ] Add secure mode toggle controls in frontend
+- [ ] Add per-feature vulnerable vs secure comparison cards
+- [ ] Add blocked-action and mitigation feedback UI
+
+### 🧪 Dev Testing
+- [ ] Validate secure mode toggling effects in frontend flows
+- [ ] Validate mitigation state rendering for protected endpoints
+
+### 📘 Documentation
+- [ ] Document frontend secure mode controls
+- [ ] Add UI comparison matrix for vulnerable vs secure behaviors
+
+### 📖 User Guide
+- [ ] Add secure mode frontend walkthrough for defenders
+
+### 💾 Commits
+- [ ] `feat(frontend): add secure mode control center`
+- [ ] `docs(frontend): document phase 7 secure ui`
 
 ---
 
@@ -454,6 +644,34 @@ Broken function-level authorization + chains
 - [ ] `docs: finalize documentation`
 - [ ] `release(v1.0.0): vulnerable lab`
 - [ ] `release(v2.0.0): secure mode`
+
+---
+
+## 🚀 Sprint 12.1 – Frontend Integration (Phase 8)
+### 🎯 Goal
+Finalize production-grade frontend packaging, hardening, and release workflow.
+
+### ✅ Development
+- [ ] Optimize frontend image layers and caching
+- [ ] Add frontend health/readiness checks
+- [ ] Add frontend production deployment profile
+- [ ] Add release artifact generation for frontend bundle
+
+### 🧪 QA
+- [ ] Frontend stability test under long-running sessions
+- [ ] Frontend regression coverage for all sprint modules
+
+### 📘 Documentation
+- [ ] Finalize frontend operations manual
+- [ ] Add frontend production runbook and rollback plan
+
+### 📖 User Guide
+- [ ] Add production frontend usage guide for red/blue teams
+
+### 💾 Commits
+- [ ] `chore(frontend): harden production image and probes`
+- [ ] `ci(frontend): add release packaging workflow`
+- [ ] `docs(frontend): finalize production manuals`
 
 ---
 

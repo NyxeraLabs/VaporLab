@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -e
-BASE_URL="${1:-http://localhost:8080}"
+BASE_URL="${1:-http://localhost:18080}"
 
 curl -sf "$BASE_URL/users/2" >/dev/null
 curl -sf -X POST "$BASE_URL/admin/promote?user_id=1" >/dev/null

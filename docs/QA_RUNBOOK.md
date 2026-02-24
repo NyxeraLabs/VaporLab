@@ -12,8 +12,10 @@ This runbook tracks reproducible validation per sprint. Update status after each
 | 1 | Secure mode toggle | `POST /auth/mode {"secure_mode":true}` then `GET /auth/mode` | Runtime mode updates to secure mode | ready to execute |
 | 1 | OAuth/OIDC misuse | `GET /oidc/authorize` with `http://` redirect URI | Vulnerable mode redirects to insecure URI with auth code | ready to execute |
 | 1 | OpenID misconfig check | Same OIDC authorize call in secure mode | Secure mode rejects non-HTTPS redirect URI | ready to execute |
-| 2 | IDOR/BOLA reproduction | `curl -s http://localhost:8080/users/2` in vulnerable mode | Cross-tenant object access is allowed | ready to execute |
+| 2 | IDOR/BOLA reproduction | `curl -s http://localhost:18080/users/2` in vulnerable mode | Cross-tenant object access is allowed | ready to execute |
 | 2 | Role escalation via PATCH | `PATCH /users/1` with `{"role":"admin"}` in vulnerable mode | Role changes to admin | ready to execute |
 | 2 | Sensitive data exposure | `GET /users/1` in vulnerable mode | Response exposes `internal_notes` and `password` | ready to execute |
 | 2 | Rate-limit bypass validation | `GET /users/rate-limit-bypass` in vulnerable mode | Returns bypass granted | ready to execute |
 | 2 | Multi-tenant enforcement comparison | Same `GET /users/2` with `X-Tenant-ID: tenant-a` in secure mode | Returns `403` tenant mismatch | ready to execute |
+| 1.1 | Frontend dashboard smoke | Open `http://localhost:15100` and trigger refresh | Health, users, jwt preview, chain panel render without errors | ready to execute |
+| 1.1 | Non-standard ports validation | `docker-compose -f docker-compose.dev.yml ps` and confirm mapped host ports | No default host ports (3000/5432/6379/8080/etc.) are used | ready to execute |

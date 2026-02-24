@@ -1,5 +1,15 @@
-
 services:
+  frontend:
+    build:
+      context: ./frontend
+    container_name: vaporlab_frontend_dev
+    environment:
+      - NEXT_PUBLIC_API_BASE=http://localhost:18080
+    ports:
+      - "15100:3000"
+    depends_on:
+      - api
+
   api:
     build: .
     container_name: vaporlab_api_dev
@@ -8,7 +18,7 @@ services:
       - JWT_SECRET=weaksecret
       - AI_API_KEY=hardcoded-demo-ai-key
     ports:
-      - "8080:8080"
+      - "18080:8080"
     depends_on:
       - postgres
       - redis
@@ -23,13 +33,13 @@ services:
       - POSTGRES_PASSWORD=vapor
       - POSTGRES_DB=vaporlab
     ports:
-      - "5432:5432"
+      - "15432:5432"
 
   redis:
     image: redis:7
     container_name: vaporlab_redis_dev
     ports:
-      - "6379:6379"
+      - "16379:6379"
 
   minio:
     image: minio/minio:latest
@@ -39,14 +49,14 @@ services:
       - MINIO_ROOT_USER=minio
       - MINIO_ROOT_PASSWORD=minio123
     ports:
-      - "9000:9000"
-      - "9001:9001"
+      - "19000:9000"
+      - "19001:9001"
 
   vectordb:
     image: qdrant/qdrant:latest
     container_name: vaporlab_qdrant_dev
     ports:
-      - "6333:6333"
+      - "16333:6333"
 
   prometheus:
     image: prom/prometheus:latest
@@ -54,22 +64,22 @@ services:
     volumes:
       - ./infra/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
     ports:
-      - "9090:9090"
+      - "19090:9090"
 
   grafana:
     image: grafana/grafana:latest
     container_name: vaporlab_grafana_dev
     ports:
-      - "3000:3000"
+      - "13000:3000"
 
   jaeger:
     image: jaegertracing/all-in-one:latest
     container_name: vaporlab_jaeger_dev
     ports:
-      - "16686:16686"
+      - "16687:16686"
 
   gateway:
     image: nginx:alpine
     container_name: vaporlab_gateway_dev
     ports:
-      - "8081:80"
+      - "18081:80"

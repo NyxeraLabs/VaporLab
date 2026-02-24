@@ -8,4 +8,4 @@
 5. Abuse AI query surface (`/ai/query`).
 
 Run automated chain:
-`attack-scenarios/chains/full_chain.sh http://localhost:8080`
+`attack-scenarios/chains/full_chain.sh http://localhost:18080`

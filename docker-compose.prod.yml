@@ -1,5 +1,15 @@
-
 services:
+  frontend:
+    build:
+      context: ./frontend
+    container_name: vaporlab_frontend_prod
+    environment:
+      - NEXT_PUBLIC_API_BASE=http://localhost:38080
+    ports:
+      - "35100:3000"
+    depends_on:
+      - api
+
   api:
     build: .
     container_name: vaporlab_api_prod
@@ -8,7 +18,7 @@ services:
       - JWT_SECRET=replace-in-prod
       - AI_API_KEY=replace-in-prod
     ports:
-      - "8083:8080"
+      - "38080:8080"
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:8080/healthz"]
       interval: 30s
@@ -22,34 +32,51 @@ services:
       - POSTGRES_USER=vapor
       - POSTGRES_PASSWORD=vapor
       - POSTGRES_DB=vaporlab
+    ports:
+      - "35432:5432"
 
   redis:
     image: redis:7
     container_name: vaporlab_redis_prod
+    ports:
+      - "36379:6379"
 
   minio:
     image: minio/minio:latest
     container_name: vaporlab_minio_prod
     command: server /data --console-address ":9001"
+    ports:
+      - "39000:9000"
+      - "39001:9001"
 
   vectordb:
     image: qdrant/qdrant:latest
     container_name: vaporlab_qdrant_prod
+    ports:
+      - "36333:6333"
 
   prometheus:
     image: prom/prometheus:latest
     container_name: vaporlab_prometheus_prod
     volumes:
       - ./infra/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - "39090:9090"
 
   grafana:
     image: grafana/grafana:latest
     container_name: vaporlab_grafana_prod
+    ports:
+      - "33000:3000"
 
   jaeger:
     image: jaegertracing/all-in-one:latest
     container_name: vaporlab_jaeger_prod
+    ports:
+      - "36687:16686"
 
   gateway:
     image: nginx:alpine
     container_name: vaporlab_gateway_prod
+    ports:
+      - "38081:80"
