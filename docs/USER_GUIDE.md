@@ -6,18 +6,19 @@ docker-compose -f docker-compose.dev.yml up -d --build
 ```
 
 ## 2. Open Interfaces
-- Frontend Console: `http://localhost:15100`
+- Workspace UI: `http://localhost:15100/workspace`
+- Operator UI: `http://localhost:15100/operator`
 - API Health: `http://localhost:18080/healthz`
 - Prometheus: `http://localhost:19090`
 - Grafana: `http://localhost:13000`
 - Jaeger: `http://localhost:16687`
 
 ## 3. Frontend Walkthrough
-The Next.js dashboard provides:
-- Health + secure mode status
-- JWT issuance preview
-- Users surface preview
-- Chain probe panel
+The Next.js frontend has two isolated interfaces:
+- Workspace UI (`/workspace`): realistic SaaS target application
+- Operator UI (`/operator`): protected lab control panel
+
+Operator access key (default local): `vaporlab-ops`
 
 ## 4. Authentication Walkthrough (Sprint 1)
 ```bash
@@ -101,42 +102,48 @@ curl -s -X POST http://localhost:18080/ai/query -H 'content-type: application/js
 curl -s http://localhost:18080/chain/run
 ```
 
-## 8. Frontend Walkthrough: Billing + Admin Chain Abuse (Sprint 4.1)
-1. Open the dashboard at `http://localhost:15100`.
-2. Confirm mode banner:
-   - Vulnerable mode should show `Vulnerable Mode Enabled`.
-   - Secure mode should show `Secure Mode Enabled`.
-3. In `Billing Scenario Widgets`:
-   - Click `Replay Coupon` and observe:
-     - Vulnerable mode: replay allowed (HTTP 200).
-     - Secure mode: replay blocked (HTTP 409).
-   - Click `Run Export` using a format like `json$(echo chain)`:
-     - Vulnerable mode: command-like format accepted.
-     - Secure mode: invalid format blocked (HTTP 400).
-   - Click `Send Webhook` with empty signature:
-     - Vulnerable mode: accepted (HTTP 200).
-     - Secure mode: rejected (HTTP 401).
-4. In `Admin Escalation Workflow`:
-   - Click `Promote (No Header)`:
-     - Vulnerable mode: role escalation succeeds.
-     - Secure mode: blocked (HTTP 403).
-   - Click `Debug Route`:
-     - Vulnerable mode: debug token exposed.
-     - Secure mode: endpoint disabled (HTTP 403).
-5. Click `Run Full Chain` and verify timeline state transitions for:
-   - `GET /users/:id`
-   - `POST /admin/promote`
-   - `GET /billing/export`
-   - `POST /ai/query`
-   - `GET /chain/run`
-6. Review `Mode-Aware Alerts` to confirm each action is marked as expected or unexpected relative to active mode.
+## 8. Frontend Walkthrough: Dual UI Model (Sprint 4.2)
+1. Open `http://localhost:15100/workspace` to access the fake SaaS target app.
+2. Verify SaaS modules:
+   - Sidebar navigation
+   - Workspace switcher
+   - Project board
+   - Issue modal
+   - User profile settings
+   - OAuth connection settings
+   - AI suggestion panel
+3. Open `http://localhost:15100/operator` to access the operator panel.
+4. Enter operator key `vaporlab-ops`.
+5. Verify operator modules:
+   - Persistent mode badge (top-right)
+   - Difficulty selector
+   - Vulnerability cards
+   - Exploit chain canvas scaffold
+6. Confirm theme isolation:
+   - Operator UI remains tactical/dark
+   - Workspace UI remains corporate SaaS style
+   - Switching lab mode changes backend behavior, not workspace branding
 
-## 9. QA Smoke Script
+## 9. Frontend API Workflow Checks (Current Endpoint Coverage)
+1. Workspace member lookup:
+   - Open `/workspace`, use `Team Access Workflow`, query user `2`.
+2. Billing workflow:
+   - Use `Billing Workspace Actions` with coupon `SPRINT` and export format `json$(echo report)`.
+3. OAuth checks:
+   - Use `OAuth Connection Check` with redirect URI `http://evil.local/callback`.
+4. Resource and inventory checks:
+   - Use `Resource and Inventory Checks` with URL `http://localhost:18080/internal/status`.
+5. AI/RAG checks:
+   - Use `AI / RAG Lab Controls` and run KB search + embed + config probe.
+6. Operator hardening:
+   - Open `/operator`, click `Harden API` then return to workspace and repeat checks to observe protected responses.
+
+## 10. QA Smoke Script
 ```bash
 bash scripts/qa_tests.sh http://localhost:18080
 ```
 
-## 10. Environment Port Sets
+## 11. Environment Port Sets
 - Dev: frontend `15100`, api `18080`
 - QA: frontend `25100`, api `28080`
 - Prod: frontend `35100`, api `38080`

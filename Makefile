@@ -21,12 +21,51 @@ run:
 
 dev-up:
 	$(COMPOSE) -f docker-compose.dev.yml up -d --build
+	@echo ""
+	@echo "VaporLab dev stack is up."
+	@echo "Workspace:   http://localhost:15100/workspace"
+	@echo "Operator:    http://localhost:15100/operator"
+	@echo "Operator key: vaporlab-ops"
+	@echo "API Health:  http://localhost:18080/healthz"
+	@echo "Prometheus:  http://localhost:19090"
+	@echo "Grafana:     http://localhost:13000"
+	@echo "Jaeger:      http://localhost:16687"
+	@echo ""
+	@echo "Useful checks:"
+	@echo "  make dev-logs"
+	@echo "  curl -s http://localhost:18080/chain/run"
 
 qa-up:
 	$(COMPOSE) -f docker-compose.qa.yml up -d --build
+	@echo ""
+	@echo "VaporLab QA stack is up."
+	@echo "Workspace:   http://localhost:25100/workspace"
+	@echo "Operator:    http://localhost:25100/operator"
+	@echo "Operator key: vaporlab-ops"
+	@echo "API Health:  http://localhost:28080/healthz"
+	@echo "Prometheus:  http://localhost:29090"
+	@echo "Grafana:     http://localhost:23000"
+	@echo "Jaeger:      http://localhost:26687"
+	@echo ""
+	@echo "Useful checks:"
+	@echo "  make qa-logs"
+	@echo "  curl -s http://localhost:28080/chain/run"
 
 prod-up:
 	$(COMPOSE) -f docker-compose.prod.yml up -d --build
+	@echo ""
+	@echo "VaporLab prod stack is up."
+	@echo "Workspace:   http://localhost:35100/workspace"
+	@echo "Operator:    http://localhost:35100/operator"
+	@echo "Operator key: vaporlab-ops"
+	@echo "API Health:  http://localhost:38080/healthz"
+	@echo "Prometheus:  http://localhost:39090"
+	@echo "Grafana:     http://localhost:33000"
+	@echo "Jaeger:      http://localhost:36687"
+	@echo ""
+	@echo "Useful checks:"
+	@echo "  make prod-logs"
+	@echo "  curl -s http://localhost:38080/chain/run"
 
 dev-install: dev-up
 

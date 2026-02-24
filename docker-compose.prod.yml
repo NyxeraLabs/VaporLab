@@ -5,6 +5,7 @@ services:
     container_name: vaporlab_frontend_prod
     environment:
       - NEXT_PUBLIC_API_BASE=http://localhost:38080
+      - NEXT_PUBLIC_OPERATOR_ACCESS_KEY=vaporlab-ops
     ports:
       - "35100:3000"
     depends_on:

@@ -9,6 +9,8 @@ COPY next-env.d.ts ./
 COPY app ./app
 COPY components ./components
 COPY lib ./lib
+COPY layouts ./layouts
+COPY themes ./themes
 RUN npm install
 RUN npm run build
 EXPOSE 3000

@@ -293,6 +293,41 @@ Expose Billing and Admin attack flows in the frontend console after backend comp
 
 ---
 
+## 🚀 Sprint 4.2 – Dual Web UI Architecture (Operator + Target SaaS)
+### 🎯 Goal
+Introduce two isolated web interfaces: a protected Operator Dashboard and a realistic fake SaaS target application.
+
+### ✅ Development
+- [x] Create route-level split: `/operator/*` and `/workspace/*`
+- [x] Add token-driven theming with shared core tokens and isolated operator/saas themes
+- [x] Add dedicated layouts (`OperatorLayout`, `SaaSLayout`) with strict visual isolation
+- [x] Add operator UI modules (mode badge, difficulty selector, vulnerability cards, chain canvas scaffold)
+- [x] Add SaaS UI modules (sidebar, workspace switcher, project board, issue modal, profile settings, OAuth settings, AI panel)
+- [x] Add mandatory themed footer component for both UIs
+- [x] Add operator UI access gate (key-based UI protection)
+- [x] Update frontend container build context for new layout/theme directories
+
+### 🧪 Dev Testing
+- [x] Validate `/workspace` renders SaaS layout and components
+- [x] Validate `/operator` renders operator layout and protected access flow
+- [x] Validate frontend production build after architecture split
+- [x] Validate no direct hex colors inside component/layout files
+
+### 📘 Documentation
+- [x] Document dual-UI architecture and route isolation
+- [x] Document theme token structure (`core.ts`, `operator.ts`, `saas.ts`)
+- [x] Update frontend manual with Operator vs SaaS workflows
+
+### 📖 User Guide
+- [x] Add access instructions for `/workspace` and `/operator`
+- [x] Add operator key usage notes for local environments
+
+### 💾 Commits
+- [x] `feat(frontend): add dual-ui operator and workspace architecture`
+- [x] `docs(frontend): document sprint 4.2 dual interface model`
+
+---
+
 # 🌐 PHASE 3 – OWASP 2023 EXPANSION
 
 ## 🚀 Sprint 5 – SSRF & Resource Abuse
@@ -354,23 +389,24 @@ Expose Billing and Admin attack flows in the frontend console after backend comp
 Add frontend views for OWASP 2023 discovery and resource abuse surfaces after API rollout.
 
 ### ✅ Development
-- [ ] Add SSRF/resource abuse dashboard cards
-- [ ] Add API inventory explorer for v1/v2/beta/internal routes
-- [ ] Add request builders for discovery and misuse scenarios
+- [x] Add SSRF/resource abuse workspace actions (URL fetch + GraphQL probe)
+- [x] Add API inventory explorer checks for v1/v2/beta/internal/openapi
+- [x] Add request builders for discovery and misuse scenarios in workspace UI
 
 ### 🧪 Dev Testing
-- [ ] Validate frontend SSRF/resource abuse interactions
-- [ ] Validate inventory explorer route discovery behavior
+- [x] Validate frontend SSRF/resource abuse interactions
+- [x] Validate inventory explorer route discovery behavior
 
 ### 📘 Documentation
-- [ ] Document phase 3 frontend modules and data flows
+- [x] Document phase 3 frontend modules and data flows
 - [ ] Update manuals with frontend-driven OWASP 2023 labs
 
 ### 📖 User Guide
-- [ ] Add frontend lab walkthrough for SSRF, DoS, and inventory discovery
+- [x] Add frontend lab walkthrough for SSRF and inventory discovery
+- [ ] Add frontend DoS walkthrough extensions
 
 ### 💾 Commits
-- [ ] `feat(frontend): add owasp-2023 scenario console`
+- [x] `feat(frontend): add owasp-2023 discovery and resource checks`
 - [ ] `docs(frontend): document phase 3 exploit views`
 
 ---
@@ -434,23 +470,24 @@ Add frontend views for OWASP 2023 discovery and resource abuse surfaces after AP
 Provide a dedicated frontend AI exploitation cockpit after AI endpoints are implemented.
 
 ### ✅ Development
-- [ ] Add prompt injection studio and response inspector
-- [ ] Add RAG/vector poisoning controls and trace output
-- [ ] Add AI chaining execution board with step-by-step results
+- [x] Add AI response inspector panel in workspace interface
+- [x] Add RAG controls (KB search + embed + AI config probes)
+- [x] Add AI chain signal visibility in operator runtime panel
 
 ### 🧪 Dev Testing
-- [ ] Validate prompt injection flows from frontend to API
-- [ ] Validate vector poisoning and chain execution widgets
+- [x] Validate prompt/AI query flows from frontend to API
+- [x] Validate RAG endpoint interactions from frontend
 
 ### 📘 Documentation
-- [ ] Document AI cockpit architecture and usage
+- [x] Document AI cockpit architecture and usage baseline
 - [ ] Update threat model docs with frontend attack paths
 
 ### 📖 User Guide
-- [ ] Add frontend AI lab exercises and misuse scenarios
+- [x] Add frontend AI lab baseline exercises
+- [ ] Add extended misuse scenario walkthroughs
 
 ### 💾 Commits
-- [ ] `feat(frontend): add ai exploitation cockpit`
+- [x] `feat(frontend): add ai workspace and operator integration modules`
 - [ ] `docs(frontend): document phase 4 ai console`
 
 ---
@@ -587,23 +624,23 @@ Add observability and blind-spot visibility panels to the frontend console after
 Add secure mode controls and vulnerable-vs-secure comparison UX to the frontend.
 
 ### ✅ Development
-- [ ] Add secure mode toggle controls in frontend
-- [ ] Add per-feature vulnerable vs secure comparison cards
-- [ ] Add blocked-action and mitigation feedback UI
+- [x] Add secure mode toggle controls in operator frontend
+- [x] Add runtime status indicators for vulnerable vs hardened states
+- [x] Add blocked-action feedback through workspace/API result panels
 
 ### 🧪 Dev Testing
-- [ ] Validate secure mode toggling effects in frontend flows
-- [ ] Validate mitigation state rendering for protected endpoints
+- [x] Validate secure mode toggling effects in frontend flows
+- [x] Validate mitigation state rendering for protected endpoints
 
 ### 📘 Documentation
-- [ ] Document frontend secure mode controls
+- [x] Document frontend secure mode controls
 - [ ] Add UI comparison matrix for vulnerable vs secure behaviors
 
 ### 📖 User Guide
-- [ ] Add secure mode frontend walkthrough for defenders
+- [x] Add secure mode frontend walkthrough baseline for defenders
 
 ### 💾 Commits
-- [ ] `feat(frontend): add secure mode control center`
+- [x] `feat(frontend): add secure mode control center`
 - [ ] `docs(frontend): document phase 7 secure ui`
 
 ---

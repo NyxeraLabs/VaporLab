@@ -2,31 +2,186 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --bg-top: #0d1b2a;
-  --bg-mid: #1b4965;
-  --bg-low: #edf6f9;
-  --accent: #62b6cb;
-  --warning: #e76f51;
-}
-
 * {
   box-sizing: border-box;
 }
 
+html,
 body {
   margin: 0;
-  min-height: 100vh;
-  font-family: "IBM Plex Sans", sans-serif;
-  background:
-    radial-gradient(circle at 15% 15%, rgba(98, 182, 203, 0.28), transparent 34%),
-    radial-gradient(circle at 85% 20%, rgba(231, 111, 81, 0.18), transparent 30%),
-    linear-gradient(180deg, var(--bg-top) 0%, var(--bg-mid) 52%, var(--bg-low) 100%);
-  color: #f5f8fa;
+  min-height: 100%;
 }
 
-.grid-overlay {
-  background-image: linear-gradient(rgba(255, 255, 255, 0.06) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.06) 1px, transparent 1px);
-  background-size: 26px 26px;
+body {
+  font-family: Inter, sans-serif;
+}
+
+input,
+textarea,
+button,
+select {
+  font: inherit;
+}
+
+.theme-operator {
+  --bg: theme(colors.operator.background);
+  --surface: theme(colors.operator.surface);
+  --surface-soft: color-mix(in srgb, theme(colors.operator.surface) 86%, theme(colors.operator.background));
+  --sidebar: theme(colors.operator.surface);
+  --primary: theme(colors.operator.accentPrimary);
+  --secondary: theme(colors.operator.accentDefense);
+  --danger: theme(colors.operator.accentOffense);
+  --success: theme(colors.operator.accentPrimary);
+  --warning: theme(colors.operator.warning);
+  --text-primary: theme(colors.operator.textPrimary);
+  --text-secondary: theme(colors.operator.textSecondary);
+  --footer-muted: theme(colors.operator.footerMuted);
+  --gradient-primary: linear-gradient(
+    90deg,
+    theme(colors.operator.accentPrimary),
+    theme(colors.operator.accentDefense)
+  );
+  --gradient-danger: linear-gradient(
+    90deg,
+    theme(colors.operator.accentOffense),
+    theme(colors.operator.accentPrimary)
+  );
+  --mode-vulnerable: theme(colors.operator.accentOffense);
+  --mode-hardened: theme(colors.operator.accentDefense);
+  --mode-mixed: theme(colors.operator.accentMixed);
+  --diff-beginner: theme(colors.operator.accentDefense);
+  --diff-intermediate: theme(colors.operator.accentPrimary);
+  --diff-advanced: theme(colors.operator.warning);
+  --diff-adversary: theme(colors.operator.accentOffense);
+  --canvas-access: theme(colors.operator.accentDefense);
+  --canvas-injection: theme(colors.operator.warning);
+  --canvas-identity: theme(colors.operator.accentPrimary);
+  --canvas-ai: theme(colors.operator.accentMixed);
+  --canvas-config: theme(colors.operator.textSecondary);
+  --heading-font: Orbitron, Inter, sans-serif;
+  --body-font: Inter, sans-serif;
+  --code-font: "JetBrains Mono", monospace;
+}
+
+.theme-saas {
+  --bg: theme(colors.saas.background);
+  --surface: theme(colors.saas.surface);
+  --surface-soft: color-mix(in srgb, theme(colors.saas.background) 72%, theme(colors.saas.surface));
+  --sidebar: theme(colors.saas.sidebar);
+  --primary: theme(colors.saas.primary);
+  --secondary: theme(colors.saas.secondary);
+  --danger: theme(colors.saas.danger);
+  --success: theme(colors.saas.success);
+  --warning: theme(colors.saas.secondary);
+  --text-primary: theme(colors.saas.textPrimary);
+  --text-secondary: theme(colors.saas.textSecondary);
+  --footer-muted: theme(colors.saas.footerMuted);
+  --gradient-primary: linear-gradient(
+    100deg,
+    theme(colors.saas.primary),
+    theme(colors.saas.secondary)
+  );
+  --gradient-danger: linear-gradient(
+    100deg,
+    theme(colors.saas.danger),
+    theme(colors.saas.secondary)
+  );
+  --heading-font: Inter, sans-serif;
+  --body-font: Inter, sans-serif;
+  --code-font: "JetBrains Mono", monospace;
+}
+
+.app-shell {
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--text-primary);
+  font-family: var(--body-font);
+}
+
+.theme-operator .app-shell {
+  background-image:
+    radial-gradient(circle at 12% 8%, color-mix(in srgb, var(--primary) 20%, transparent), transparent 33%),
+    radial-gradient(circle at 88% 12%, color-mix(in srgb, var(--danger) 18%, transparent), transparent 30%);
+}
+
+.heading-font {
+  font-family: var(--heading-font);
+}
+
+.code-font {
+  font-family: var(--code-font);
+}
+
+.surface-card {
+  background: var(--surface);
+  border: 1px solid color-mix(in srgb, var(--text-secondary) 22%, transparent);
+  border-radius: theme(borderRadius.16);
+}
+
+.surface-soft {
+  background: var(--surface-soft);
+  border: 1px solid color-mix(in srgb, var(--text-secondary) 22%, transparent);
+  border-radius: theme(borderRadius.12);
+}
+
+.border-subtle {
+  border-color: color-mix(in srgb, var(--text-secondary) 26%, transparent);
+}
+
+.overlay-scrim {
+  background: color-mix(in srgb, var(--sidebar) 58%, transparent);
+}
+
+.field {
+  width: 100%;
+  border: 1px solid color-mix(in srgb, var(--text-secondary) 32%, transparent);
+  border-radius: theme(borderRadius.12);
+  background: color-mix(in srgb, var(--surface) 86%, var(--bg));
+  color: var(--text-primary);
+  padding: 0.55rem 0.75rem;
+}
+
+.field::placeholder {
+  color: color-mix(in srgb, var(--text-secondary) 85%, transparent);
+}
+
+.btn {
+  border: 1px solid transparent;
+  border-radius: theme(borderRadius.12);
+  padding: 0.55rem 0.9rem;
+  font-weight: 600;
+  transition: all theme(transitionDuration.normal) ease;
+}
+
+.btn:hover {
+  filter: brightness(1.05);
+}
+
+.btn-primary {
+  background: var(--primary);
+  color: var(--surface);
+}
+
+.btn-secondary {
+  background: var(--secondary);
+  color: var(--surface);
+}
+
+.btn-danger {
+  background: var(--danger);
+  color: theme(colors.operator.textPrimary);
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--text-primary);
+  border-color: color-mix(in srgb, var(--text-secondary) 30%, transparent);
+}
+
+.footer-base {
+  border-top: 1px solid color-mix(in srgb, var(--text-secondary) 26%, transparent);
+  color: var(--footer-muted);
+  text-align: center;
+  font-size: 0.82rem;
+  padding: 0.95rem 1rem 1.2rem;
 }
