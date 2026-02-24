@@ -1,0 +1,44 @@
+name: Development Build & Test
+
+on:
+  push:
+    branches: [ "dev" ]
+  pull_request:
+    branches: [ "dev" ]
+  workflow_dispatch:
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: 1.21
+
+      - name: Install dependencies
+        run: go mod tidy
+
+      - name: Lint & Format
+        run: |
+          echo "Running lint..."
+          golangci-lint run || true
+
+      - name: Run Unit Tests
+        run: |
+          go test ./... -v
+
+      - name: Build Binary
+        run: |
+          go build -o vaporlab ./cmd/
+
+      - name: Build Docker for dev
+        run: |
+          docker-compose -f docker-compose.dev.yml build

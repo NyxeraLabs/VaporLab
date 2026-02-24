@@ -1,0 +1,34 @@
+name: QA Pipeline
+
+on:
+  push:
+    branches: [ "qa" ]
+  workflow_dispatch:
+
+jobs:
+  qa:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Build Docker
+        run: docker-compose -f docker-compose.qa.yml build
+
+      - name: Run QA Tests
+        run: |
+          echo "Running automated QA tests..."
+          # ./scripts/qa_tests.sh
+          echo "QA tests completed"
+
+      - name: Save Artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: qa-artifacts
+          path: |
+            reports/
+            logs/

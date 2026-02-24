@@ -1,0 +1,78 @@
+name: Production Deployment & Auto-Tag
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  prod-deploy:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Git user
+        run: |
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+
+      - name: Get latest tag
+        id: get_tag
+        run: |
+          set -e
+          TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
+          echo "latest_tag=$TAG" >> $GITHUB_ENV
+          echo "Latest tag is $TAG"
+
+      - name: Bump patch version
+        id: bump_version
+        run: |
+          set -e
+          TAG=${{ env.latest_tag }}
+          # Remove leading 'v' if exists
+          TAG_CLEAN=${TAG#v}
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$TAG_CLEAN"
+          PATCH=$((PATCH + 1))
+          NEW_TAG="v$MAJOR.$MINOR.$PATCH"
+          echo "new_tag=$NEW_TAG" >> $GITHUB_ENV
+          echo "New version tag will be $NEW_TAG"
+
+      - name: Run QA tests
+        run: |
+          echo "Running QA tests..."
+          # Uncomment the line below when ready
+          # ./scripts/qa_tests.sh
+
+      - name: Build Docker images
+        run: |
+          docker-compose -f docker-compose.prod.yml build
+
+      - name: Optional: Push Docker images
+        run: |
+          echo "Skipping push; configure DockerHub/GHCR if needed"
+          # docker login -u ${{ secrets.DOCKER_USER }} -p ${{ secrets.DOCKER_TOKEN }}
+          # docker tag vaporlab:latest myrepo/vaporlab:${{ env.new_tag }}
+          # docker push myrepo/vaporlab:${{ env.new_tag }}
+
+      - name: Create Git tag
+        run: |
+          git tag ${{ env.new_tag }}
+          git push origin ${{ env.new_tag }}
+
+      #- name: Deploy to Production Server
+      #  env:
+      #    PROD_HOST: ${{ secrets.PROD_HOST }}
+      #    PROD_USER: ${{ secrets.PROD_USER }}
+      #    PROD_KEY: ${{ secrets.PROD_KEY }}
+      #  run: |
+      #    echo "Deploying to production..."
+      #    scp -i $PROD_KEY docker-compose.prod.yml $PROD_USER@$PROD_HOST:/opt/vaporlab/
+      #    ssh -i $PROD_KEY $PROD_USER@$PROD_HOST "cd /opt/vaporlab && docker-compose -f docker-compose.prod.yml up -d --build"
+
+      - name: Deployment Complete
+        run: echo "Production workflow finished (deploy skipped - host not configured)."

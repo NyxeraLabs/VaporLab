@@ -1,0 +1,36 @@
+name: Lint & Build Verification
+
+on:
+  pull_request:
+    branches: [ "dev", "qa", "main" ]
+  workflow_dispatch:
+
+jobs:
+  lint-build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: 1.21
+
+      - name: Install Dependencies
+        run: go mod tidy
+
+      - name: Lint Code
+        run: |
+          echo "Linting..."
+          golangci-lint run
+
+      - name: Build Binary
+        run: go build -o vaporlab ./cmd/
+
+      - name: Docker Build (Check)
+        run: docker-compose -f docker-compose.dev.yml build --no-cache
