@@ -5,7 +5,7 @@
 	dev-logs qa-logs prod-logs logs \
 	dev-ps qa-ps prod-ps ps \
 	dev-restart qa-restart prod-restart restart \
-	bootstrap qa
+	bootstrap qa load-test soak-test
 
 COMPOSE ?= docker compose
 
@@ -126,3 +126,9 @@ restart: dev-restart
 
 qa:
 	bash scripts/qa_tests.sh
+
+load-test:
+	bash scripts/load_test.sh http://localhost:38080 500 25 /ai/query
+
+soak-test:
+	bash scripts/stability_soak.sh http://localhost:38080 60 30 /tmp/vaporlab_stability_soak.log
