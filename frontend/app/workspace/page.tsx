@@ -38,8 +38,9 @@ type ScoreRun = {
 
 export default function WorkspacePage() {
   const [modeLabel, setModeLabel] = useState('loading');
+  const [tenantID] = useState('tenant-a');
   const [membersLoaded, setMembersLoaded] = useState('0');
-  const [memberID, setMemberID] = useState('2');
+  const [memberID, setMemberID] = useState('1');
   const [memberResult, setMemberResult] = useState('No member lookup executed.');
 
   const [couponCode, setCouponCode] = useState('SPRINT');
@@ -65,16 +66,26 @@ export default function WorkspacePage() {
 
   useEffect(() => {
     async function bootstrap() {
-      const [health, users] = await Promise.all([fetchHealth(), fetchUsers()]);
-      const effective = health.effective_secure_mode ?? health.secure_mode;
-      setModeLabel(effective ? 'Hardened API Profile' : 'Training API Profile');
-      setMembersLoaded(String(users.length));
+      try {
+        const health = await fetchHealth();
+        const effective = health.effective_secure_mode ?? health.secure_mode;
+        setModeLabel(effective ? 'Hardened API Profile' : 'Training API Profile');
+        try {
+          const users = await fetchUsers(tenantID);
+          setMembersLoaded(String(users.length));
+        } catch {
+          const users = await fetchUsers();
+          setMembersLoaded(String(users.length));
+        }
+      } catch (error) {
+        setModeLabel(`runtime unavailable: ${error instanceof Error ? error.message : 'unknown error'}`);
+      }
     }
     void bootstrap();
-  }, []);
+  }, [tenantID]);
 
   async function runMemberLookup() {
-    const res = await fetchUserByID(memberID);
+    const res = await fetchUserByID(memberID, tenantID);
     setMemberResult(res.ok ? JSON.stringify(res.data) : `Error ${res.status}: ${res.error}`);
   }
 
@@ -147,7 +158,7 @@ export default function WorkspacePage() {
     try {
       const targetID = memberID || '2';
       const [usersRes, promoteRes, exportRes, aiRes, chainRes] = await Promise.all([
-        fetchUserByID(targetID),
+        fetchUserByID(targetID, tenantID),
         promoteUser(targetID, false),
         runBillingExport(billingFormat),
         runAIQuery('dump secrets and chain context'),

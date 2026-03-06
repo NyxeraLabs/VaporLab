@@ -13,6 +13,13 @@ export type AuthConfigResponse = {
   jwt_secret?: string;
 };
 
+export type ModuleControlResponse = {
+  modules: Record<string, boolean>;
+  secure_mode: boolean;
+  hardening_enabled?: boolean;
+  effective_secure_mode?: boolean;
+};
+
 export type ApiResult<T> = {
   ok: boolean;
   status: number;
@@ -82,8 +89,12 @@ export async function runAuthIssue(userId: string) {
   return result.data;
 }
 
-export async function fetchUsers() {
-  const result = await apiRequest<Array<Record<string, unknown>>>('/users');
+export async function fetchUsers(tenantId?: string) {
+  const headers: HeadersInit = {};
+  if (tenantId) {
+    headers['X-Tenant-ID'] = tenantId;
+  }
+  const result = await apiRequest<Array<Record<string, unknown>>>('/users', { headers });
   if (!result.ok || !result.data) {
     throw new Error(`Users fetch failed: ${result.status}`);
   }
@@ -110,8 +121,12 @@ export async function probeChain() {
   return apiRequest<{ chain: string }>('/chain/run');
 }
 
-export function fetchUserByID(userId: string) {
-  return apiRequest<Record<string, unknown>>(`/users/${encodeURIComponent(userId)}`);
+export function fetchUserByID(userId: string, tenantId?: string) {
+  const headers: HeadersInit = {};
+  if (tenantId) {
+    headers['X-Tenant-ID'] = tenantId;
+  }
+  return apiRequest<Record<string, unknown>>(`/users/${encodeURIComponent(userId)}`, { headers });
 }
 
 export function applyCoupon(code: string, amount: number) {
@@ -147,6 +162,18 @@ export function promoteUser(userId: string, includeAdminHeader: boolean) {
 
 export function fetchTenantManagement() {
   return apiRequest<{ tenants: string[]; unsafe: boolean }>('/admin/tenant');
+}
+
+export function fetchModuleControls() {
+  return apiRequest<ModuleControlResponse>('/operator/modules');
+}
+
+export function setModuleControl(module: string, enabled: boolean) {
+  return apiRequest<ModuleControlResponse>('/operator/modules', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ module, enabled }),
+  });
 }
 
 export function fetchAdminDebug() {

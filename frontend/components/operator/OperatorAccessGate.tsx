@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { FormEvent, useEffect, useState } from 'react';
 
 const STORAGE_KEY = 'vaporlab_operator_auth';
@@ -35,6 +36,16 @@ export default function OperatorAccessGate({ children }: { children: React.React
   return (
     <main className="app-shell theme-operator flex items-center justify-center p-6">
       <section className="surface-card w-full max-w-md p-6">
+        <div className="mb-4 flex items-center justify-center">
+          <Image
+            src="/VaporLab_Logo.png"
+            alt="VaporLab"
+            width={140}
+            height={140}
+            priority
+            className="h-16 w-auto"
+          />
+        </div>
         <h1 className="heading-font text-2xl">Operator Access</h1>
         <p className="mt-2 text-sm text-[var(--text-secondary)]">
           Enter the operator key to access control routes.

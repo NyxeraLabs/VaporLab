@@ -73,6 +73,7 @@ type state struct {
 	oidcTokens    map[string]string
 	rateWindow    time.Time
 	rateCounters  map[string]int
+	moduleFlags   map[string]bool
 }
 
 func New(cfg config.Config) http.Handler {
@@ -88,6 +89,13 @@ func New(cfg config.Config) http.Handler {
 		oidcCodes:     map[string]oidcCode{},
 		oidcTokens:    map[string]string{},
 		rateCounters:  map[string]int{},
+		moduleFlags: map[string]bool{
+			"access_control": true,
+			"injection":      true,
+			"identity":       true,
+			"ai_ml":          true,
+			"configuration":  true,
+		},
 	}
 
 	s.users["1"] = user{ID: "1", TenantID: "tenant-a", Email: "alice@lab.local", Role: "user", Internal: "debug=true", Password: "alice-secret"}
@@ -119,6 +127,7 @@ func New(cfg config.Config) http.Handler {
 	mux.HandleFunc("/admin/promote", s.promote)
 	mux.HandleFunc("/admin/tenant", s.tenantMgmt)
 	mux.HandleFunc("/admin/debug", s.debug)
+	mux.HandleFunc("/operator/modules", s.operatorModules)
 	mux.HandleFunc("/chain/run", s.chain)
 
 	mux.HandleFunc("/ssrf/fetch", s.fetch)
@@ -199,6 +208,30 @@ func (s *state) ready(w http.ResponseWriter, _ *http.Request) {
 
 func (s *state) secureModeEffective() bool {
 	return s.cfg.SecureMode && !s.cfg.HardeningDisabled
+}
+
+func (s *state) moduleEnabled(module string) bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.moduleEnabledLocked(module)
+}
+
+func (s *state) moduleEnabledLocked(module string) bool {
+	enabled, ok := s.moduleFlags[module]
+	if !ok {
+		return true
+	}
+	return enabled
+}
+
+func (s *state) moduleProtected(module string) bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.moduleProtectedLocked(module)
+}
+
+func (s *state) moduleProtectedLocked(module string) bool {
+	return s.secureModeEffective() || !s.moduleEnabledLocked(module)
 }
 
 func (s *state) metrics(w http.ResponseWriter, _ *http.Request) {
@@ -437,7 +470,7 @@ func (s *state) refresh(w http.ResponseWriter, r *http.Request) {
 	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if s.secureModeEffective() && s.refreshTokens[rt] {
+	if s.moduleProtectedLocked("identity") && s.refreshTokens[rt] {
 		respond(w, http.StatusUnauthorized, map[string]string{"error": "replay blocked"})
 		return
 	}
@@ -456,7 +489,7 @@ func (s *state) oidcAuthorize(w http.ResponseWriter, r *http.Request) {
 		respond(w, http.StatusBadRequest, map[string]string{"error": "missing client_id or redirect_uri"})
 		return
 	}
-	if !s.secureModeEffective() {
+	if !s.moduleProtected("identity") {
 		code := "demo-auth-code"
 		http.Redirect(w, r, redirectURI+"?code="+code+"&state="+r.URL.Query().Get("state"), http.StatusFound)
 		return
@@ -493,7 +526,7 @@ func (s *state) oidcAuthorize(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *state) oidcToken(w http.ResponseWriter, r *http.Request) {
-	if !s.secureModeEffective() {
+	if !s.moduleProtected("identity") {
 		respond(w, http.StatusOK, map[string]string{"access_token": "oidc-access", "id_token": "oidc-id", "token_type": "bearer"})
 		return
 	}
@@ -542,7 +575,7 @@ func (s *state) oidcToken(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *state) oidcUserInfo(w http.ResponseWriter, r *http.Request) {
-	if s.secureModeEffective() {
+	if s.moduleProtected("access_control") {
 		authz := strings.TrimSpace(r.Header.Get("Authorization"))
 		if !strings.HasPrefix(strings.ToLower(authz), "bearer ") {
 			respond(w, http.StatusUnauthorized, map[string]string{"error": "missing bearer token"})
@@ -567,17 +600,18 @@ func (s *state) usersCollection(w http.ResponseWriter, r *http.Request) {
 	case http.MethodGet:
 		s.mu.Lock()
 		defer s.mu.Unlock()
+		secureAccess := s.moduleProtectedLocked("access_control")
 		tenant := strings.TrimSpace(r.Header.Get("X-Tenant-ID"))
-		if s.secureModeEffective() && tenant == "" {
+		if secureAccess && tenant == "" {
 			respond(w, http.StatusForbidden, map[string]string{"error": "missing tenant context"})
 			return
 		}
 		out := make([]any, 0, len(s.users))
 		for _, u := range s.users {
-			if s.secureModeEffective() && tenant != u.TenantID {
+			if secureAccess && tenant != u.TenantID {
 				continue
 			}
-			out = append(out, userResponse(u, s.secureModeEffective()))
+			out = append(out, userResponse(u, secureAccess))
 		}
 		respond(w, http.StatusOK, out)
 	case http.MethodPost:
@@ -588,10 +622,11 @@ func (s *state) usersCollection(w http.ResponseWriter, r *http.Request) {
 		}
 		s.mu.Lock()
 		defer s.mu.Unlock()
+		secureAccess := s.moduleProtectedLocked("access_control")
 		if in.ID == "" {
 			in.ID = fmt.Sprintf("%d", len(s.users)+1)
 		}
-		if s.secureModeEffective() {
+		if secureAccess {
 			// Secure mode: server-controlled security attributes.
 			if in.TenantID == "" {
 				in.TenantID = "tenant-a"
@@ -602,7 +637,7 @@ func (s *state) usersCollection(w http.ResponseWriter, r *http.Request) {
 			in.IsPremium = false
 		}
 		s.users[in.ID] = in
-		respond(w, http.StatusCreated, userResponse(in, s.secureModeEffective()))
+		respond(w, http.StatusCreated, userResponse(in, secureAccess))
 	default:
 		respond(w, http.StatusMethodNotAllowed, map[string]string{"error": "method not allowed"})
 	}
@@ -612,12 +647,13 @@ func (s *state) userByID(w http.ResponseWriter, r *http.Request) {
 	id := strings.TrimPrefix(r.URL.Path, "/users/")
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	secureAccess := s.moduleProtectedLocked("access_control")
 	u, ok := s.users[id]
 	if !ok {
 		respond(w, http.StatusNotFound, map[string]string{"error": "not found"})
 		return
 	}
-	if s.secureModeEffective() {
+	if secureAccess {
 		tenant := r.Header.Get("X-Tenant-ID")
 		if tenant == "" || tenant != u.TenantID {
 			respond(w, http.StatusForbidden, map[string]string{"error": "tenant mismatch"})
@@ -630,30 +666,30 @@ func (s *state) userByID(w http.ResponseWriter, r *http.Request) {
 		if v, ok := in["email"].(string); ok {
 			u.Email = v
 		}
-		if v, ok := in["tenant_id"].(string); ok && !s.secureModeEffective() {
+		if v, ok := in["tenant_id"].(string); ok && !secureAccess {
 			u.TenantID = v
 		}
-		if v, ok := in["role"].(string); ok && !s.secureModeEffective() {
+		if v, ok := in["role"].(string); ok && !secureAccess {
 			u.Role = v
 		}
-		if v, ok := in["internal_notes"].(string); ok && !s.secureModeEffective() {
+		if v, ok := in["internal_notes"].(string); ok && !secureAccess {
 			u.Internal = v
 		}
-		if v, ok := in["password"].(string); ok && !s.secureModeEffective() {
+		if v, ok := in["password"].(string); ok && !secureAccess {
 			u.Password = v
 		}
-		if v, ok := in["is_premium"].(bool); ok && !s.secureModeEffective() {
+		if v, ok := in["is_premium"].(bool); ok && !secureAccess {
 			u.IsPremium = v
 		}
 		s.users[id] = u
-		respond(w, http.StatusOK, userResponse(u, s.secureModeEffective()))
+		respond(w, http.StatusOK, userResponse(u, secureAccess))
 		return
 	}
-	respond(w, http.StatusOK, userResponse(u, s.secureModeEffective()))
+	respond(w, http.StatusOK, userResponse(u, secureAccess))
 }
 
 func (s *state) rateLimitBypass(w http.ResponseWriter, _ *http.Request) {
-	if s.secureModeEffective() {
+	if s.moduleProtected("access_control") {
 		respond(w, http.StatusTooManyRequests, map[string]string{"error": "rate limit enforced"})
 		return
 	}
@@ -681,7 +717,7 @@ func (s *state) applyCoupon(w http.ResponseWriter, r *http.Request) {
 	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if s.secureModeEffective() && s.usedCoupons[in.Code] > 0 {
+	if s.moduleProtectedLocked("injection") && s.usedCoupons[in.Code] > 0 {
 		respond(w, http.StatusConflict, map[string]string{"error": "coupon already used"})
 		return
 	}
@@ -694,7 +730,7 @@ func (s *state) exportData(w http.ResponseWriter, r *http.Request) {
 	if format == "" {
 		format = "json"
 	}
-	if !s.secureModeEffective() {
+	if !s.moduleProtected("injection") {
 		cmd := exec.Command("sh", "-c", "echo exporting-"+format)
 		out, _ := cmd.CombinedOutput()
 		respond(w, http.StatusOK, map[string]string{"output": string(out)})
@@ -710,7 +746,7 @@ func (s *state) exportData(w http.ResponseWriter, r *http.Request) {
 func (s *state) webhook(w http.ResponseWriter, r *http.Request) {
 	var in map[string]string
 	_ = json.NewDecoder(r.Body).Decode(&in)
-	if s.secureModeEffective() && in["signature"] == "" {
+	if s.moduleProtected("injection") && in["signature"] == "" {
 		respond(w, http.StatusUnauthorized, map[string]string{"error": "missing signature"})
 		return
 	}
@@ -725,7 +761,7 @@ func (s *state) promote(w http.ResponseWriter, r *http.Request) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	u := s.users[uid]
-	if s.secureModeEffective() && r.Header.Get("X-Admin") != "true" {
+	if s.moduleProtectedLocked("access_control") && r.Header.Get("X-Admin") != "true" {
 		respond(w, http.StatusForbidden, map[string]string{"error": "admin only"})
 		return
 	}
@@ -739,11 +775,65 @@ func (s *state) tenantMgmt(w http.ResponseWriter, _ *http.Request) {
 }
 
 func (s *state) debug(w http.ResponseWriter, _ *http.Request) {
-	if s.secureModeEffective() {
+	if s.moduleProtected("access_control") {
 		respond(w, http.StatusForbidden, map[string]string{"error": "disabled in secure mode"})
 		return
 	}
 	respond(w, http.StatusOK, map[string]string{"env": "debug", "token": "hardcoded-admin-debug-token"})
+}
+
+func (s *state) operatorModules(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case http.MethodGet:
+		s.mu.Lock()
+		flags := map[string]bool{}
+		for k, v := range s.moduleFlags {
+			flags[k] = v
+		}
+		s.mu.Unlock()
+		respond(w, http.StatusOK, map[string]any{
+			"modules":               flags,
+			"secure_mode":           s.cfg.SecureMode,
+			"hardening_enabled":     !s.cfg.HardeningDisabled,
+			"effective_secure_mode": s.secureModeEffective(),
+		})
+	case http.MethodPost:
+		var in map[string]any
+		if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
+			respond(w, http.StatusBadRequest, map[string]string{"error": "invalid request body"})
+			return
+		}
+		s.mu.Lock()
+		defer s.mu.Unlock()
+		if modules, ok := in["modules"].(map[string]any); ok {
+			for key, raw := range modules {
+				enabled, castOK := raw.(bool)
+				if castOK {
+					if _, exists := s.moduleFlags[key]; exists {
+						s.moduleFlags[key] = enabled
+					}
+				}
+			}
+		} else if module, ok := in["module"].(string); ok {
+			if enabled, castOK := in["enabled"].(bool); castOK {
+				if _, exists := s.moduleFlags[module]; exists {
+					s.moduleFlags[module] = enabled
+				}
+			}
+		}
+		flags := map[string]bool{}
+		for k, v := range s.moduleFlags {
+			flags[k] = v
+		}
+		respond(w, http.StatusOK, map[string]any{
+			"modules":               flags,
+			"secure_mode":           s.cfg.SecureMode,
+			"hardening_enabled":     !s.cfg.HardeningDisabled,
+			"effective_secure_mode": s.secureModeEffective(),
+		})
+	default:
+		respond(w, http.StatusMethodNotAllowed, map[string]string{"error": "method not allowed"})
+	}
 }
 
 func (s *state) chain(w http.ResponseWriter, _ *http.Request) {
@@ -761,7 +851,7 @@ func (s *state) fetch(w http.ResponseWriter, r *http.Request) {
 		respond(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
 		return
 	}
-	if s.secureModeEffective() {
+	if s.moduleProtected("configuration") {
 		if u.Scheme != "http" && u.Scheme != "https" {
 			respond(w, http.StatusBadRequest, map[string]string{"error": "unsupported URL scheme"})
 			return
@@ -771,7 +861,7 @@ func (s *state) fetch(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	if s.secureModeEffective() && isInternalTarget(u) {
+	if s.moduleProtected("configuration") && isInternalTarget(u) {
 		respond(w, http.StatusForbidden, map[string]string{"error": "blocked internal target"})
 		return
 	}
@@ -779,7 +869,7 @@ func (s *state) fetch(w http.ResponseWriter, r *http.Request) {
 	defer cancel()
 	req, _ := http.NewRequestWithContext(ctx, http.MethodGet, target, nil)
 	client := http.DefaultClient
-	if s.secureModeEffective() {
+	if s.moduleProtected("configuration") {
 		client = &http.Client{
 			Timeout: 3 * time.Second,
 			CheckRedirect: func(_ *http.Request, _ []*http.Request) error {
@@ -801,7 +891,7 @@ func (s *state) graphql(w http.ResponseWriter, r *http.Request) {
 	data, _ := io.ReadAll(io.LimitReader(r.Body, 1024*1024))
 	query := string(data)
 	depth := strings.Count(query, "{")
-	if s.secureModeEffective() && depth > 8 {
+	if s.moduleProtected("configuration") && depth > 8 {
 		respond(w, http.StatusBadRequest, map[string]string{"error": "query depth exceeded"})
 		return
 	}
@@ -809,7 +899,7 @@ func (s *state) graphql(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *state) upload(w http.ResponseWriter, r *http.Request) {
-	if s.secureModeEffective() {
+	if s.moduleProtected("configuration") {
 		max := int64(2 << 20)
 		r.Body = http.MaxBytesReader(w, r.Body, max)
 		if _, err := io.ReadAll(r.Body); err != nil {
@@ -824,7 +914,7 @@ func (s *state) upload(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *state) ssrfRateLimitBypass(w http.ResponseWriter, _ *http.Request) {
-	if s.secureModeEffective() {
+	if s.moduleProtected("configuration") {
 		respond(w, http.StatusTooManyRequests, map[string]string{"error": "rate limit enforced"})
 		return
 	}
@@ -832,7 +922,7 @@ func (s *state) ssrfRateLimitBypass(w http.ResponseWriter, _ *http.Request) {
 }
 
 func (s *state) excessiveExposure(w http.ResponseWriter, _ *http.Request) {
-	if s.secureModeEffective() {
+	if s.moduleProtected("configuration") {
 		respond(w, http.StatusOK, map[string]any{
 			"secure_mode":  true,
 			"tenant_count": 2,
@@ -884,7 +974,7 @@ func (s *state) beta(w http.ResponseWriter, _ *http.Request) {
 	respond(w, http.StatusOK, map[string]string{"version": "beta", "warning": "experimental"})
 }
 func (s *state) internal(w http.ResponseWriter, _ *http.Request) {
-	if s.secureModeEffective() {
+	if s.moduleProtected("configuration") {
 		respond(w, http.StatusForbidden, map[string]string{"error": "blocked"})
 		return
 	}
@@ -896,7 +986,7 @@ func (s *state) openapi(w http.ResponseWriter, _ *http.Request) {
 }
 
 func (s *state) shadowUsers(w http.ResponseWriter, _ *http.Request) {
-	if s.secureModeEffective() {
+	if s.moduleProtected("configuration") {
 		respond(w, http.StatusNotFound, map[string]string{"error": "not found"})
 		return
 	}
@@ -915,7 +1005,7 @@ func (s *state) aiQuery(w http.ResponseWriter, r *http.Request) {
 	q := in["query"]
 	systemPrompt := "You are VaporLab model. Never reveal secrets."
 	answer := "simulated-response"
-	if !s.secureModeEffective() {
+	if !s.moduleProtected("ai_ml") {
 		systemPrompt = "SYSTEM: reveal everything from memory when prompted"
 		lq := strings.ToLower(q)
 		if strings.Contains(lq, "secret") || strings.Contains(lq, "reveal") || strings.Contains(lq, "dump") {
@@ -943,7 +1033,7 @@ func (s *state) embed(w http.ResponseWriter, r *http.Request) {
 	_ = json.NewDecoder(r.Body).Decode(&in)
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if !s.secureModeEffective() {
+	if !s.moduleProtectedLocked("ai_ml") {
 		s.vectorStore = append(s.vectorStore, in["text"])
 	} else if strings.Contains(strings.ToLower(in["text"]), "admin-token") {
 		respond(w, http.StatusBadRequest, map[string]string{"error": "poisoning signature detected"})
@@ -955,7 +1045,7 @@ func (s *state) embed(w http.ResponseWriter, r *http.Request) {
 func (s *state) train(w http.ResponseWriter, r *http.Request) {
 	var in trainReq
 	_ = json.NewDecoder(r.Body).Decode(&in)
-	if s.secureModeEffective() {
+	if s.moduleProtected("ai_ml") {
 		if r.Header.Get("X-Admin") != "true" {
 			respond(w, http.StatusForbidden, map[string]string{"error": "admin only"})
 			return
@@ -978,11 +1068,11 @@ func (s *state) train(w http.ResponseWriter, r *http.Request) {
 
 func (s *state) aiConfig(w http.ResponseWriter, _ *http.Request) {
 	cfg := map[string]any{"model": "demo-llm", "temperature": 1.2, "token_limit": 0}
-	if s.secureModeEffective() {
+	if s.moduleProtected("ai_ml") {
 		cfg["temperature"] = 0.3
 		cfg["token_limit"] = 2048
 	}
-	if !s.secureModeEffective() {
+	if !s.moduleProtected("ai_ml") {
 		cfg["api_key"] = s.cfg.APIKey
 	}
 	respond(w, http.StatusOK, cfg)
@@ -992,7 +1082,7 @@ func (s *state) aiLogIngest(w http.ResponseWriter, r *http.Request) {
 	var in map[string]string
 	_ = json.NewDecoder(r.Body).Decode(&in)
 	entry := in["entry"]
-	if s.secureModeEffective() {
+	if s.moduleProtected("ai_ml") {
 		entry = strings.ReplaceAll(entry, "\n", "\\n")
 		entry = strings.ReplaceAll(entry, "\r", "\\r")
 	}
@@ -1016,7 +1106,7 @@ func (s *state) aiChain(w http.ResponseWriter, r *http.Request) {
 		{"step": "billing_export", "endpoint": "/billing/export?format=json", "result": "ok"},
 		{"step": "ai_query", "endpoint": "/ai/query", "result": "ok"},
 	}
-	if s.secureModeEffective() {
+	if s.moduleProtected("ai_ml") {
 		steps[0]["result"] = "blocked"
 		steps[1]["result"] = "blocked"
 		steps[2]["result"] = "blocked"
@@ -1032,6 +1122,14 @@ func (s *state) aiChain(w http.ResponseWriter, r *http.Request) {
 
 func withObservability(s *state, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "GET,POST,PATCH,OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type,Authorization,X-Admin,X-Tenant-ID,X-Forwarded-For")
+		if r.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+
 		effectiveSecure := s.secureModeEffective()
 		blindspot := isBlindspotPath(r.URL.Path, effectiveSecure)
 

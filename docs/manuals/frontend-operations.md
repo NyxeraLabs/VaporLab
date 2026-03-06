@@ -11,7 +11,12 @@ Production-oriented operations guidance for VaporLab frontend packaging and runt
 ## Health and Readiness
 - `GET /api/healthz`
 - `GET /api/readyz`
-- Compose healthchecks call frontend health endpoint in dev/qa/prod profiles.
+- Compose healthchecks call frontend health endpoint in dev/qa/prod profiles using `http://$(hostname -i):3000/api/healthz`.
+  This avoids loopback binding differences in standalone Next.js runtime images.
+
+## Browser/API Connectivity
+- The backend now emits CORS headers (`Access-Control-Allow-Origin: *`) and handles `OPTIONS` preflight for lab routes.
+- This keeps `/workspace` and `/operator` functional when frontend and API run on different ports in local compose.
 
 ## Deployment Profile
 - Production compose exposes frontend on `35100`.
