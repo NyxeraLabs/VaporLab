@@ -20,6 +20,7 @@
 *.log
 *.tmp
 /tmp/
+scripts/**/__pycache__/
 
 # Editor/OS
 .DS_Store
