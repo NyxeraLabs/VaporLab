@@ -326,6 +326,17 @@ Blue-team quick validation:
 bash scripts/qa_tests.sh http://localhost:18080
 ```
 
+## 16.1 Full Vulnerability Exploit Harness
+Run all vulnerable-path exploit checks in sequence and print `Success`/`Failure` per item:
+```bash
+python3 scripts/exploit_all.py --base-url http://localhost:18080
+```
+
+Shortcut:
+```bash
+make exploit-all
+```
+
 ## 17. Environment Port Sets
 - Dev: frontend `15100`, api `18080`
 - QA: frontend `25100`, api `28080`

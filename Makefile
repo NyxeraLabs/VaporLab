@@ -5,7 +5,7 @@
 	dev-logs qa-logs prod-logs logs \
 	dev-ps qa-ps prod-ps ps \
 	dev-restart qa-restart prod-restart restart \
-	bootstrap qa load-test soak-test
+	bootstrap qa load-test soak-test exploit-all
 
 COMPOSE ?= docker compose
 
@@ -132,3 +132,6 @@ load-test:
 
 soak-test:
 	bash scripts/stability_soak.sh http://localhost:38080 60 30 /tmp/vaporlab_stability_soak.log
+
+exploit-all:
+	python3 scripts/exploit_all.py --base-url http://localhost:18080
