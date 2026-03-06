@@ -31,6 +31,7 @@ jobs:
     outputs:
       release_tag: ${{ steps.meta.outputs.release_tag }}
       image_ref: ${{ steps.meta.outputs.image_ref }}
+      release_track: ${{ steps.meta.outputs.release_track }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -44,12 +45,26 @@ jobs:
           set -euo pipefail
           if [[ "${GITHUB_REF:-}" == refs/tags/* ]]; then
             TAG="${GITHUB_REF#refs/tags/}"
+            major="${TAG#v}"
+            major="${major%%.*}"
+            if [[ "$major" =~ ^[0-9]+$ ]] && [[ "$major" -ge 2 ]]; then
+              SECURE_MODE="true"
+            else
+              SECURE_MODE="false"
+            fi
           else
             TAG="${{ inputs.release_tag }}"
+            SECURE_MODE="${{ inputs.secure_mode }}"
+          fi
+          if [[ "$SECURE_MODE" == "true" ]]; then
+            TRACK="secure"
+          else
+            TRACK="vulnerable"
           fi
           IMAGE_REF="${REGISTRY}/${IMAGE_NAME}:${TAG}"
           echo "release_tag=${TAG}" >> "$GITHUB_OUTPUT"
           echo "image_ref=${IMAGE_REF}" >> "$GITHUB_OUTPUT"
+          echo "release_track=${TRACK}" >> "$GITHUB_OUTPUT"
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -70,6 +85,10 @@ jobs:
           tags: |
             ${{ steps.meta.outputs.image_ref }}
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+          labels: |
+            org.opencontainers.image.title=VaporLab API
+            org.opencontainers.image.version=${{ steps.meta.outputs.release_tag }}
+            io.vaporlab.release.track=${{ steps.meta.outputs.release_track }}
 
       - name: Generate image SBOM (SPDX JSON)
         uses: anchore/sbom-action@v0
@@ -118,3 +137,6 @@ jobs:
           tag_name: ${{ needs.release-build.outputs.release_tag }}
           files: dist/vaporlab-api-${{ needs.release-build.outputs.release_tag }}.sbom.spdx.json
           generate_release_notes: true
+          body: |
+            Release track: `${{ needs.release-build.outputs.release_track }}`
+            Image: `${{ needs.release-build.outputs.image_ref }}`

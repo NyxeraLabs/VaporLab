@@ -3,6 +3,8 @@ const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? 'http://localhost:18080';
 export type HealthResponse = {
   status: string;
   secure_mode: boolean;
+  hardening_enabled?: boolean;
+  effective_secure_mode?: boolean;
 };
 
 export type AuthConfigResponse = {
@@ -160,27 +162,53 @@ export function runAIQuery(query: string) {
 }
 
 export function fetchOIDCAuthorizeProbe(clientId: string, redirectUri: string, state = 'demo') {
+  return fetchOIDCAuthorizeProbeWithNonce(clientId, redirectUri, state, 'nonce-demo');
+}
+
+export async function fetchOIDCAuthorizeProbeWithNonce(clientId: string, redirectUri: string, state: string, nonce: string) {
   const query = new URLSearchParams({
     client_id: clientId,
     redirect_uri: redirectUri,
     state,
+    nonce,
   });
-  return apiRequest<Record<string, unknown>>(`/oidc/authorize?${query.toString()}`, {
+  const res = await fetch(`${API_BASE}/oidc/authorize?${query.toString()}`, {
+    cache: 'no-store',
     redirect: 'manual',
   });
+  return {
+    ok: res.ok,
+    status: res.status,
+    location: res.headers.get('location') ?? '',
+  };
 }
 
-export function fetchOIDCUserInfo(withToken: boolean) {
+export function fetchOIDCUserInfo(token?: string) {
   const headers: HeadersInit = {};
-  if (withToken) {
-    headers.Authorization = 'Bearer demo-token';
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
   }
   return apiRequest<{ sub: string; email: string }>('/oidc/userinfo', { headers });
 }
 
-export function fetchOIDCToken() {
+export function fetchOIDCToken(form?: {
+  grant_type: string;
+  client_id: string;
+  client_secret: string;
+  redirect_uri: string;
+  code: string;
+}) {
+  let body: string | undefined;
+  let headers: HeadersInit | undefined;
+  if (form) {
+    const encoded = new URLSearchParams(form);
+    body = encoded.toString();
+    headers = { 'content-type': 'application/x-www-form-urlencoded' };
+  }
   return apiRequest<{ access_token: string; id_token: string; token_type: string }>('/oidc/token', {
     method: 'POST',
+    headers,
+    body,
   });
 }
 

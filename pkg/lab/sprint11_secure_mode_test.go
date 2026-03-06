@@ -140,3 +140,21 @@ func TestAITrainSecureRequiresAdmin(t *testing.T) {
 		t.Fatalf("expected admin-only enforcement in secure mode, got %d", unauth.Code)
 	}
 }
+
+func TestReadyzRejectsWeakSecretInEffectiveSecureMode(t *testing.T) {
+	h := New(config.Config{SecureMode: true, WeakJWTKey: "weaksecret", APIKey: "demo-key"})
+	res := httptest.NewRecorder()
+	h.ServeHTTP(res, httptest.NewRequest(http.MethodGet, "/readyz", nil))
+	if res.Code != http.StatusServiceUnavailable {
+		t.Fatalf("expected 503 with weak secret in effective secure mode, got %d", res.Code)
+	}
+}
+
+func TestReadyzPassesWithStrongSecretInEffectiveSecureMode(t *testing.T) {
+	h := New(config.Config{SecureMode: true, WeakJWTKey: "strong-secret-value", APIKey: "demo-key"})
+	res := httptest.NewRecorder()
+	h.ServeHTTP(res, httptest.NewRequest(http.MethodGet, "/readyz", nil))
+	if res.Code != http.StatusOK {
+		t.Fatalf("expected 200 with strong secure configuration, got %d", res.Code)
+	}
+}

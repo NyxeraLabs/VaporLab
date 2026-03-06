@@ -82,8 +82,9 @@ export default function OperatorPage() {
       fetchTenantManagement(),
       probeChain(),
     ]);
-    const secure = healthRes.secure_mode ? 'HARDENED' : 'VULNERABLE';
-    setSecureRuntime(healthRes.secure_mode);
+    const effectiveSecure = healthRes.effective_secure_mode ?? healthRes.secure_mode;
+    const secure = effectiveSecure ? 'HARDENED' : 'VULNERABLE';
+    setSecureRuntime(effectiveSecure);
     const weak = authCfgRes.ok && authCfgRes.data?.weak_secret ? 'weak-jwt-secret' : 'strong-jwt-secret';
     const tenantState = tenantRes.ok && tenantRes.data?.unsafe ? 'unsafe-tenant-admin' : 'tenant-controls-on';
     setRuntime(`${secure} | ${weak} | ${tenantState}`);

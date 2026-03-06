@@ -95,7 +95,7 @@ func New(cfg config.Config) http.Handler {
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/healthz", s.health)
-	mux.HandleFunc("/readyz", s.health)
+	mux.HandleFunc("/readyz", s.ready)
 	mux.HandleFunc("/metrics", s.metrics)
 	mux.HandleFunc("/telemetry/events", s.telemetryEvents)
 
@@ -148,6 +148,49 @@ func New(cfg config.Config) http.Handler {
 func (s *state) health(w http.ResponseWriter, _ *http.Request) {
 	respond(w, http.StatusOK, map[string]any{
 		"status":                "ok",
+		"secure_mode":           s.cfg.SecureMode,
+		"hardening_enabled":     !s.cfg.HardeningDisabled,
+		"effective_secure_mode": s.secureModeEffective(),
+	})
+}
+
+func (s *state) ready(w http.ResponseWriter, _ *http.Request) {
+	issues := []string{}
+	if strings.TrimSpace(s.cfg.WeakJWTKey) == "" {
+		issues = append(issues, "missing JWT secret")
+	}
+	if strings.TrimSpace(s.cfg.APIKey) == "" {
+		issues = append(issues, "missing AI API key")
+	}
+
+	s.mu.Lock()
+	hasUsers := len(s.users) > 0
+	hasVectorSeed := len(s.vectorStore) > 0
+	s.mu.Unlock()
+	if !hasUsers {
+		issues = append(issues, "users seed unavailable")
+	}
+	if !hasVectorSeed {
+		issues = append(issues, "vector store seed unavailable")
+	}
+
+	if s.secureModeEffective() && isWeakSecret(s.cfg.WeakJWTKey) {
+		issues = append(issues, "weak jwt secret in effective secure mode")
+	}
+
+	if len(issues) > 0 {
+		respond(w, http.StatusServiceUnavailable, map[string]any{
+			"status":                "not_ready",
+			"issues":                issues,
+			"secure_mode":           s.cfg.SecureMode,
+			"hardening_enabled":     !s.cfg.HardeningDisabled,
+			"effective_secure_mode": s.secureModeEffective(),
+		})
+		return
+	}
+
+	respond(w, http.StatusOK, map[string]any{
+		"status":                "ready",
 		"secure_mode":           s.cfg.SecureMode,
 		"hardening_enabled":     !s.cfg.HardeningDisabled,
 		"effective_secure_mode": s.secureModeEffective(),

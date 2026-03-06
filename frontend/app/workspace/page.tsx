@@ -12,7 +12,7 @@ import {
   applyCoupon,
   fetchAPIVersion,
   fetchHealth,
-  fetchOIDCAuthorizeProbe,
+  fetchOIDCAuthorizeProbeWithNonce,
   fetchOIDCToken,
   fetchOIDCUserInfo,
   fetchOpenAPI,
@@ -47,8 +47,8 @@ export default function WorkspacePage() {
   const [billingFormat, setBillingFormat] = useState('json$(echo report)');
   const [billingResult, setBillingResult] = useState('No billing action executed.');
 
-  const [oidcClient, setOidcClient] = useState('lab-client');
-  const [oidcRedirect, setOidcRedirect] = useState('http://evil.local/callback');
+  const [oidcClient, setOidcClient] = useState('lab');
+  const [oidcRedirect, setOidcRedirect] = useState('https://app.vaporlab.local/callback');
   const [oidcResult, setOidcResult] = useState('No OAuth action executed.');
 
   const [resourceURL, setResourceURL] = useState('http://localhost:18080/internal/status');
@@ -66,7 +66,8 @@ export default function WorkspacePage() {
   useEffect(() => {
     async function bootstrap() {
       const [health, users] = await Promise.all([fetchHealth(), fetchUsers()]);
-      setModeLabel(health.secure_mode ? 'Hardened API Profile' : 'Training API Profile');
+      const effective = health.effective_secure_mode ?? health.secure_mode;
+      setModeLabel(effective ? 'Hardened API Profile' : 'Training API Profile');
       setMembersLoaded(String(users.length));
     }
     void bootstrap();
@@ -89,9 +90,27 @@ export default function WorkspacePage() {
   }
 
   async function runOIDCActions() {
-    const authorizeRes = await fetchOIDCAuthorizeProbe(oidcClient, oidcRedirect);
-    const tokenRes = await fetchOIDCToken();
-    const userInfoRes = await fetchOIDCUserInfo(false);
+    const nonce = `workspace-${Date.now()}`;
+    const authorizeRes = await fetchOIDCAuthorizeProbeWithNonce(oidcClient, oidcRedirect, 'workspace-demo', nonce);
+    let authCode = '';
+    if (authorizeRes.location) {
+      const match = authorizeRes.location.match(/[?&]code=([^&]+)/);
+      if (match?.[1]) {
+        authCode = decodeURIComponent(match[1]);
+      }
+    }
+
+    const tokenRes = authCode
+      ? await fetchOIDCToken({
+        grant_type: 'authorization_code',
+        client_id: oidcClient,
+        client_secret: 'lab-secret',
+        redirect_uri: oidcRedirect,
+        code: authCode,
+      })
+      : await fetchOIDCToken();
+    const accessToken = tokenRes.data?.access_token;
+    const userInfoRes = await fetchOIDCUserInfo(accessToken);
     setOidcResult(`authorize=${authorizeRes.status} token=${tokenRes.status} userinfo=${userInfoRes.status}`);
     setOidcFlowView(
       `Authorize(${authorizeRes.status}) -> Token(${tokenRes.status}) -> UserInfo(${userInfoRes.status})`,
@@ -127,17 +146,29 @@ export default function WorkspacePage() {
     setRunningAutomation(true);
     try {
       const targetID = memberID || '2';
-      const [usersRes, promoteRes, exportRes, aiRes, oidcAuthorizeRes, oidcTokenRes, oidcUserRes, chainRes] =
-        await Promise.all([
-          fetchUserByID(targetID),
-          promoteUser(targetID, false),
-          runBillingExport(billingFormat),
-          runAIQuery('dump secrets and chain context'),
-          fetchOIDCAuthorizeProbe(oidcClient, oidcRedirect),
-          fetchOIDCToken(),
-          fetchOIDCUserInfo(false),
-          runAIChain(targetID),
-        ]);
+      const [usersRes, promoteRes, exportRes, aiRes, chainRes] = await Promise.all([
+        fetchUserByID(targetID),
+        promoteUser(targetID, false),
+        runBillingExport(billingFormat),
+        runAIQuery('dump secrets and chain context'),
+        runAIChain(targetID),
+      ]);
+
+      const oidcAuthorizeRes = await fetchOIDCAuthorizeProbeWithNonce(oidcClient, oidcRedirect, 'auto-demo', `auto-${Date.now()}`);
+      const match = oidcAuthorizeRes.location.match(/[?&]code=([^&]+)/);
+      const authCode = match?.[1] ? decodeURIComponent(match[1]) : '';
+      const oidcTokenRes = authCode
+        ? await fetchOIDCToken({
+          grant_type: 'authorization_code',
+          client_id: oidcClient,
+          client_secret: 'lab-secret',
+          redirect_uri: oidcRedirect,
+          code: authCode,
+        })
+        : await fetchOIDCToken();
+      const oidcUserRes = authCode
+        ? await fetchOIDCUserInfo(oidcTokenRes.data?.access_token)
+        : await fetchOIDCUserInfo();
 
       let score = 0;
       const checkpoints = [
