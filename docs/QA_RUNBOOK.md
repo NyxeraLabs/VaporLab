@@ -32,3 +32,7 @@ This runbook tracks reproducible validation per sprint. Update status after each
 | 5 | Upload resource abuse | Upload payload >2MB to `POST /upload` | Vulnerable mode accepts payload; secure mode returns `413` | ready to execute |
 | 5 | Sprint-5 rate-limit bypass | `GET /ssrf/rate-limit-bypass` | Vulnerable mode returns bypass granted; secure mode returns `429` | ready to execute |
 | 5 | Excessive data exposure | `GET /data/exposure` | Vulnerable mode leaks internal records/secrets; secure mode returns sanitized summary | ready to execute |
+| 6 | Version drift discovery | Enumerate `/v1/status`, `/v2/status`, `/beta/status` | All version surfaces are discoverable for inventory analysis | ready to execute |
+| 6 | Internal route leakage | `GET /internal/status` in vulnerable and secure mode | Vulnerable mode exposes route; secure mode blocks with `403` | ready to execute |
+| 6 | Public OpenAPI exposure | `GET /openapi.json` | OpenAPI schema is publicly accessible for attack-surface mapping | ready to execute |
+| 6 | Shadow API exploitation | `GET /shadow/users` in vulnerable and secure mode | Vulnerable mode exposes legacy route; secure mode returns `404` | ready to execute |

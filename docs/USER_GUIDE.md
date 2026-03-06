@@ -130,7 +130,31 @@ curl -s "http://localhost:18080/ssrf/fetch?url=http://127.0.0.1:18080/healthz"
 curl -s http://localhost:18080/ssrf/rate-limit-bypass
 ```
 
-## 9. Frontend Walkthrough: Dual UI Model (Sprint 4.2)
+## 9. Inventory and Versioning Walkthrough (Sprint 6)
+Discovery sweep:
+```bash
+curl -s http://localhost:18080/v1/status
+curl -s http://localhost:18080/v2/status
+curl -s http://localhost:18080/beta/status
+curl -s http://localhost:18080/openapi.json
+```
+
+Internal and shadow route checks:
+```bash
+curl -s http://localhost:18080/internal/status
+curl -s http://localhost:18080/shadow/users
+```
+
+Secure mode comparison:
+```bash
+curl -s -X POST http://localhost:18080/auth/mode \
+  -H 'content-type: application/json' \
+  -d '{"secure_mode":true}'
+curl -s http://localhost:18080/internal/status
+curl -s http://localhost:18080/shadow/users
+```
+
+## 10. Frontend Walkthrough: Dual UI Model (Sprint 4.2)
 1. Open `http://localhost:15100/workspace` to access the fake SaaS target app.
 2. Verify SaaS modules:
    - Sidebar navigation
@@ -152,7 +176,7 @@ curl -s http://localhost:18080/ssrf/rate-limit-bypass
    - Workspace UI remains corporate SaaS style
    - Switching lab mode changes backend behavior, not workspace branding
 
-## 10. Frontend API Workflow Checks (Current Endpoint Coverage)
+## 11. Frontend API Workflow Checks (Current Endpoint Coverage)
 1. Workspace member lookup:
    - Open `/workspace`, use `Team Access Workflow`, query user `2`.
 2. Billing workflow:
@@ -166,12 +190,12 @@ curl -s http://localhost:18080/ssrf/rate-limit-bypass
 6. Operator hardening:
    - Open `/operator`, click `Harden API` then return to workspace and repeat checks to observe protected responses.
 
-## 11. QA Smoke Script
+## 12. QA Smoke Script
 ```bash
 bash scripts/qa_tests.sh http://localhost:18080
 ```
 
-## 12. Environment Port Sets
+## 13. Environment Port Sets
 - Dev: frontend `15100`, api `18080`
 - QA: frontend `25100`, api `28080`
 - Prod: frontend `35100`, api `38080`

@@ -363,24 +363,24 @@ Introduce two isolated web interfaces: a protected Operator Dashboard and a real
 
 ## 🚀 Sprint 6 – Improper Inventory & Versioning
 ### ✅ Development
-- [ ] Add /v1, /v2, /beta
-- [ ] Keep deprecated endpoints
-- [ ] Add /internal route
-- [ ] Expose OpenAPI publicly
-- [ ] Add API shadowing
+- [x] Add /v1, /v2, /beta
+- [x] Keep deprecated endpoints
+- [x] Add /internal route
+- [x] Expose OpenAPI publicly
+- [x] Add API shadowing
 
 ### 📘 Documentation
-- [ ] Document version drift
-- [ ] Add API surface map
-- [ ] Map to OWASP Top 10 (2019 & 2023)
+- [x] Document version drift
+- [x] Add API surface map
+- [x] Map to OWASP Top 10 (2019 & 2023)
 
 ### 📖 User Guide
-- [ ] Add API discovery exercise
-- [ ] Add shadow API exploitation guide
+- [x] Add API discovery exercise
+- [x] Add shadow API exploitation guide
 
 ### 💾 Commits
-- [ ] `feat(versioning): add legacy routes`
-- [ ] `docs(versioning): document api drift`
+- [x] `feat(versioning): add legacy routes`
+- [x] `docs(versioning): document api drift`
 
 ---
 
