@@ -48,3 +48,7 @@ This runbook tracks reproducible validation per sprint. Update status after each
 | 9 | Benchmark output validation | Run `scripts/score_attack.sh` against chain output | Score and per-stage benchmark fields are present in JSON | ready to execute |
 | 9 | OIDC misuse scenario | Run `attack-scenarios/oidc/oauth_misuse.sh` in vulnerable then secure mode | Insecure redirect accepted in vulnerable mode, restricted in secure mode | ready to execute |
 | 9 | Full chain scenario script | Run `attack-scenarios/chains/full_chain.sh` | Stage results and chain response are returned in JSON | ready to execute |
+| 10 | Metrics unauthenticated access | `GET /metrics` without token | Metrics payload is returned with request/trace counters | ready to execute |
+| 10 | Trace header baseline | `GET /healthz` and inspect `X-Trace-ID` | Trace header is present on non-blindspot routes | ready to execute |
+| 10 | Blind-spot route visibility gap | Call `/admin/debug` and `/ai/logs/ingest` then `/metrics` | Blindspot counter increments and trace headers are omitted on blindspot routes | ready to execute |
+| 10 | Path-level telemetry | Trigger multiple endpoints then inspect `/metrics` | `vaporlab_requests_by_path_total` includes path labels and counts | ready to execute |

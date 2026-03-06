@@ -250,7 +250,31 @@ attack-scenarios/chains/full_chain.sh http://localhost:18080 /tmp/vaporlab_chain
 scripts/score_attack.sh /tmp/vaporlab_chain_output.json /tmp/vaporlab_benchmark.json
 ```
 
-## 13. Frontend Walkthrough: Dual UI Model (Sprint 4.2)
+## 13. Logging and Metrics Walkthrough (Sprint 10)
+Check traced response:
+```bash
+curl -i http://localhost:18080/healthz
+```
+
+Check blind-spot behavior:
+```bash
+curl -i http://localhost:18080/admin/debug
+curl -s -X POST http://localhost:18080/ai/logs/ingest \
+  -H 'content-type: application/json' \
+  -d '{"entry":"ok\nlevel=ERROR forged=true"}'
+```
+
+Inspect telemetry counters:
+```bash
+curl -s http://localhost:18080/metrics
+```
+
+Blue-team quick validation:
+1. Trigger one normal endpoint (`/healthz`) and one blind-spot endpoint (`/admin/debug`).
+2. Confirm `X-Trace-ID` appears only on normal endpoint.
+3. Confirm `vaporlab_blindspot_requests_total` increments in `/metrics`.
+
+## 14. Frontend Walkthrough: Dual UI Model (Sprint 4.2)
 1. Open `http://localhost:15100/workspace` to access the fake SaaS target app.
 2. Verify SaaS modules:
    - Sidebar navigation
@@ -272,7 +296,7 @@ scripts/score_attack.sh /tmp/vaporlab_chain_output.json /tmp/vaporlab_benchmark.
    - Workspace UI remains corporate SaaS style
    - Switching lab mode changes backend behavior, not workspace branding
 
-## 14. Frontend API Workflow Checks (Current Endpoint Coverage)
+## 15. Frontend API Workflow Checks (Current Endpoint Coverage)
 1. Workspace member lookup:
    - Open `/workspace`, use `Team Access Workflow`, query user `2`.
 2. Billing workflow:
@@ -286,12 +310,12 @@ scripts/score_attack.sh /tmp/vaporlab_chain_output.json /tmp/vaporlab_benchmark.
 6. Operator hardening:
    - Open `/operator`, click `Harden API` then return to workspace and repeat checks to observe protected responses.
 
-## 15. QA Smoke Script
+## 16. QA Smoke Script
 ```bash
 bash scripts/qa_tests.sh http://localhost:18080
 ```
 
-## 16. Environment Port Sets
+## 17. Environment Port Sets
 - Dev: frontend `15100`, api `18080`
 - QA: frontend `25100`, api `28080`
 - Prod: frontend `35100`, api `38080`

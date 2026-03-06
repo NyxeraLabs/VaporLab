@@ -549,22 +549,22 @@ Expose attack automation and scoring controls in the frontend after framework AP
 # 📊 PHASE 6 – OBSERVABILITY
 ## 🚀 Sprint 10 – Logging & Metrics
 ### ✅ Development
-- [ ] Add structured logs
-- [ ] Leave intentional blind spots
-- [ ] Expose /metrics unauthenticated
-- [ ] Add tracing
+- [x] Add structured logs
+- [x] Leave intentional blind spots
+- [x] Expose /metrics unauthenticated
+- [x] Add tracing
 
 ### 📘 Documentation
-- [ ] Document telemetry architecture
-- [ ] Document detection gaps
+- [x] Document telemetry architecture
+- [x] Document detection gaps
 
 ### 📖 User Guide
-- [ ] Add blue-team testing guide
-- [ ] Add observability walkthrough
+- [x] Add blue-team testing guide
+- [x] Add observability walkthrough
 
 ### 💾 Commits
-- [ ] `feat(logging): add structured logs`
-- [ ] `docs(observability): document telemetry`
+- [x] `feat(logging): add structured logs`
+- [x] `docs(observability): document telemetry`
 
 ---
 
