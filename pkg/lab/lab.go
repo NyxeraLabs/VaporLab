@@ -39,6 +39,14 @@ type trainReq struct {
 	Content string `json:"content"`
 }
 
+type telemetryEvent struct {
+	Timestamp string `json:"timestamp"`
+	Method    string `json:"method"`
+	Path      string `json:"path"`
+	TraceID   string `json:"trace_id,omitempty"`
+	Blindspot bool   `json:"blindspot"`
+}
+
 type state struct {
 	mu            sync.Mutex
 	cfg           config.Config
@@ -51,6 +59,7 @@ type state struct {
 	traceCount    int
 	blindspotHits int
 	pathCount     map[string]int
+	events        []telemetryEvent
 	refreshTokens map[string]bool
 }
 
@@ -73,6 +82,7 @@ func New(cfg config.Config) http.Handler {
 	mux.HandleFunc("/healthz", s.health)
 	mux.HandleFunc("/readyz", s.health)
 	mux.HandleFunc("/metrics", s.metrics)
+	mux.HandleFunc("/telemetry/events", s.telemetryEvents)
 
 	mux.HandleFunc("/auth/jwt/issue", s.issueJWT)
 	mux.HandleFunc("/auth/jwt/validate", s.validateJWT)
@@ -143,6 +153,25 @@ func (s *state) metrics(w http.ResponseWriter, _ *http.Request) {
 		safePath := strings.ReplaceAll(path, `"`, `'`)
 		_, _ = w.Write([]byte(fmt.Sprintf("vaporlab_requests_by_path_total{path=\"%s\"} %d\n", safePath, count)))
 	}
+}
+
+func (s *state) telemetryEvents(w http.ResponseWriter, r *http.Request) {
+	limit := 30
+	if raw := strings.TrimSpace(r.URL.Query().Get("limit")); raw != "" {
+		var parsed int
+		if _, err := fmt.Sscanf(raw, "%d", &parsed); err == nil && parsed > 0 && parsed <= 200 {
+			limit = parsed
+		}
+	}
+	s.mu.Lock()
+	total := len(s.events)
+	start := 0
+	if total > limit {
+		start = total - limit
+	}
+	out := append([]telemetryEvent(nil), s.events[start:]...)
+	s.mu.Unlock()
+	respond(w, http.StatusOK, map[string]any{"events": out, "count": len(out)})
 }
 
 func (s *state) issueJWT(w http.ResponseWriter, r *http.Request) {
@@ -814,6 +843,20 @@ func withObservability(s *state, next http.Handler) http.Handler {
 		if !blindspot {
 			log.Printf(`{"event":"http_request","method":"%s","path":"%s","remote":"%s","secure_mode":%t,"trace_id":"%s"}`, r.Method, r.URL.Path, r.RemoteAddr, s.cfg.SecureMode, traceID)
 		}
+
+		s.mu.Lock()
+		s.events = append(s.events, telemetryEvent{
+			Timestamp: time.Now().UTC().Format(time.RFC3339),
+			Method:    r.Method,
+			Path:      r.URL.Path,
+			TraceID:   traceID,
+			Blindspot: blindspot,
+		})
+		if len(s.events) > 400 {
+			s.events = append([]telemetryEvent(nil), s.events[len(s.events)-400:]...)
+		}
+		s.mu.Unlock()
+
 		next.ServeHTTP(w, r)
 	})
 }

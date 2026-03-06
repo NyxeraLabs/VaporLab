@@ -18,6 +18,14 @@ export type ApiResult<T> = {
   error?: string;
 };
 
+export type TelemetryEvent = {
+  timestamp: string;
+  method: string;
+  path: string;
+  trace_id?: string;
+  blindspot: boolean;
+};
+
 type APIErrorBody = {
   error?: string;
   [key: string]: unknown;
@@ -170,6 +178,12 @@ export function fetchOIDCUserInfo(withToken: boolean) {
   return apiRequest<{ sub: string; email: string }>('/oidc/userinfo', { headers });
 }
 
+export function fetchOIDCToken() {
+  return apiRequest<{ access_token: string; id_token: string; token_type: string }>('/oidc/token', {
+    method: 'POST',
+  });
+}
+
 export function fetchURL(target: string) {
   return apiRequest<{ status: number; body: string }>(`/ssrf/fetch?url=${encodeURIComponent(target)}`);
 }
@@ -210,4 +224,25 @@ export function runEmbed(text: string) {
 
 export function fetchAIConfig() {
   return apiRequest<Record<string, unknown>>('/ai/config');
+}
+
+export function runAIChain(targetUserID: string) {
+  return apiRequest<{ chain: string; secure_mode: boolean; steps: Array<{ step: string; endpoint: string; result: string }> }>(
+    '/ai/chain/run',
+    {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ target_user_id: targetUserID }),
+    },
+  );
+}
+
+export async function fetchMetricsText() {
+  const res = await fetch(`${API_BASE}/metrics`, { cache: 'no-store' });
+  const text = await res.text();
+  return { ok: res.ok, status: res.status, text };
+}
+
+export function fetchTelemetryEvents(limit = 30) {
+  return apiRequest<{ events: TelemetryEvent[]; count: number }>(`/telemetry/events?limit=${encodeURIComponent(String(limit))}`);
 }

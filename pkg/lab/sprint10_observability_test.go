@@ -69,3 +69,23 @@ func TestMetricsReflectRequestAndBlindspotCounts(t *testing.T) {
 		t.Fatalf("expected per-path metric for admin debug route")
 	}
 }
+
+func TestTelemetryEventsEndpointReturnsTimeline(t *testing.T) {
+	h := New(config.Config{SecureMode: false, WeakJWTKey: "weaksecret"})
+	h.ServeHTTP(httptest.NewRecorder(), httptest.NewRequest(http.MethodGet, "/healthz", nil))
+	h.ServeHTTP(httptest.NewRecorder(), httptest.NewRequest(http.MethodGet, "/admin/debug", nil))
+
+	req := httptest.NewRequest(http.MethodGet, "/telemetry/events?limit=5", nil)
+	res := httptest.NewRecorder()
+	h.ServeHTTP(res, req)
+	if res.Code != http.StatusOK {
+		t.Fatalf("expected telemetry events endpoint 200, got %d", res.Code)
+	}
+	body := res.Body.String()
+	if !strings.Contains(body, `"events"`) {
+		t.Fatalf("expected telemetry response to contain events array")
+	}
+	if !strings.Contains(body, `"/admin/debug"`) {
+		t.Fatalf("expected timeline to include admin debug request")
+	}
+}
