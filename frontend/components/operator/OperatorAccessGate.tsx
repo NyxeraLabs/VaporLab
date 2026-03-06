@@ -46,10 +46,10 @@ export default function OperatorAccessGate({ children }: { children: React.React
           <Image
             src="/VaporLab_Logo.png"
             alt="VaporLab"
-            width={140}
-            height={140}
+            width={320}
+            height={320}
             priority
-            className="h-16 w-auto"
+            className="h-40 w-auto"
           />
         </div>
         <h1 className="heading-font text-2xl">Operator Access</h1>
