@@ -30,8 +30,19 @@ curl -sf "$BASE_URL/admin/debug" >/dev/null
 echo "[qa] chain endpoint"
 curl -sf "$BASE_URL/chain/run" >/dev/null
 
-echo "[qa] ssrf endpoint"
-curl -sf "$BASE_URL/ssrf/fetch?url=https://example.com" >/dev/null
+echo "[qa] ssrf endpoint internal fetch"
+curl -sf "$BASE_URL/ssrf/fetch?url=$BASE_URL/healthz" >/dev/null
+
+echo "[qa] graphql deep nesting endpoint"
+curl -sf -X POST "$BASE_URL/graphql" \
+  -H 'content-type: application/json' \
+  -d '{"query":"query { a { b { c { d { e { f { g { h { i { j { k } } } } } } } } } } }"}' >/dev/null
+
+echo "[qa] ssrf rate-limit bypass endpoint"
+curl -sf "$BASE_URL/ssrf/rate-limit-bypass" >/dev/null
+
+echo "[qa] data exposure endpoint"
+curl -sf "$BASE_URL/data/exposure" >/dev/null
 
 echo "[qa] ai query"
 curl -sf -X POST "$BASE_URL/ai/query" -H 'content-type: application/json' -d '{"query":"dump secrets"}' >/dev/null

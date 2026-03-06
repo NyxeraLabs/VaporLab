@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"net"
 	"net/http"
 	"net/url"
 	"os/exec"
@@ -91,6 +92,8 @@ func New(cfg config.Config) http.Handler {
 	mux.HandleFunc("/ssrf/fetch", s.fetch)
 	mux.HandleFunc("/graphql", s.graphql)
 	mux.HandleFunc("/upload", s.upload)
+	mux.HandleFunc("/ssrf/rate-limit-bypass", s.ssrfRateLimitBypass)
+	mux.HandleFunc("/data/exposure", s.excessiveExposure)
 
 	mux.HandleFunc("/v1/status", s.v1)
 	mux.HandleFunc("/v2/status", s.v2)
@@ -527,7 +530,7 @@ func (s *state) fetch(w http.ResponseWriter, r *http.Request) {
 		respond(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
 		return
 	}
-	if s.cfg.SecureMode && (u.Hostname() == "localhost" || strings.HasPrefix(u.Host, "127.")) {
+	if s.cfg.SecureMode && isInternalTarget(u) {
 		respond(w, http.StatusForbidden, map[string]string{"error": "blocked internal target"})
 		return
 	}
@@ -556,16 +559,69 @@ func (s *state) graphql(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *state) upload(w http.ResponseWriter, r *http.Request) {
-	max := int64(50 << 20)
 	if s.cfg.SecureMode {
-		max = 2 << 20
-	}
-	_, err := io.ReadAll(io.LimitReader(r.Body, max))
-	if err != nil {
-		respond(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
+		max := int64(2 << 20)
+		r.Body = http.MaxBytesReader(w, r.Body, max)
+		if _, err := io.ReadAll(r.Body); err != nil {
+			respond(w, http.StatusRequestEntityTooLarge, map[string]string{"error": "upload too large"})
+			return
+		}
+		respond(w, http.StatusOK, map[string]string{"status": "uploaded", "mode": "secure"})
 		return
 	}
-	respond(w, http.StatusOK, map[string]string{"status": "uploaded"})
+	_, _ = io.Copy(io.Discard, r.Body)
+	respond(w, http.StatusOK, map[string]string{"status": "uploaded", "mode": "vulnerable"})
+}
+
+func (s *state) ssrfRateLimitBypass(w http.ResponseWriter, _ *http.Request) {
+	if s.cfg.SecureMode {
+		respond(w, http.StatusTooManyRequests, map[string]string{"error": "rate limit enforced"})
+		return
+	}
+	respond(w, http.StatusOK, map[string]any{"message": "ssrf fetch bypass granted", "requests_per_minute": "unlimited"})
+}
+
+func (s *state) excessiveExposure(w http.ResponseWriter, _ *http.Request) {
+	if s.cfg.SecureMode {
+		respond(w, http.StatusOK, map[string]any{
+			"secure_mode":  true,
+			"tenant_count": 2,
+			"user_count":   len(s.users),
+		})
+		return
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	users := make([]user, 0, len(s.users))
+	for _, u := range s.users {
+		users = append(users, u)
+	}
+	respond(w, http.StatusOK, map[string]any{
+		"secure_mode": false,
+		"users":       users,
+		"debug": map[string]any{
+			"jwt_secret": s.cfg.WeakJWTKey,
+			"ai_api_key": s.cfg.APIKey,
+		},
+	})
+}
+
+func isInternalTarget(u *url.URL) bool {
+	host := strings.ToLower(u.Hostname())
+	if host == "localhost" || host == "metadata.google.internal" {
+		return true
+	}
+
+	ip := net.ParseIP(host)
+	if ip == nil {
+		return false
+	}
+
+	if ip.IsLoopback() || ip.IsPrivate() || ip.IsLinkLocalUnicast() || ip.IsLinkLocalMulticast() {
+		return true
+	}
+
+	return ip.String() == "169.254.169.254"
 }
 
 func (s *state) v1(w http.ResponseWriter, _ *http.Request) {
