@@ -24,6 +24,7 @@ import {
   runAIQuery,
   fetchUserByID,
   fetchUsers,
+  updateUserByID,
   runEmbed,
   runBillingExport,
   runGraphQLProbe,
@@ -38,7 +39,7 @@ type ScoreRun = {
 
 export default function WorkspacePage() {
   const [modeLabel, setModeLabel] = useState('loading');
-  const [tenantID] = useState('tenant-a');
+  const [tenantID, setTenantID] = useState('tenant-a');
   const [membersLoaded, setMembersLoaded] = useState('0');
   const [memberID, setMemberID] = useState('1');
   const [memberResult, setMemberResult] = useState('No member lookup executed.');
@@ -63,6 +64,12 @@ export default function WorkspacePage() {
   const [scoreRuns, setScoreRuns] = useState<ScoreRun[]>([]);
   const [oidcFlowView, setOidcFlowView] = useState('No OIDC flow rendered.');
   const [runningAutomation, setRunningAutomation] = useState(false);
+  const [flowStatus, setFlowStatus] = useState<Record<string, string>>({
+    access: 'pending',
+    privilege: 'pending',
+    billing: 'pending',
+    ai: 'pending',
+  });
 
   useEffect(() => {
     async function bootstrap() {
@@ -126,6 +133,19 @@ export default function WorkspacePage() {
     setOidcFlowView(
       `Authorize(${authorizeRes.status}) -> Token(${tokenRes.status}) -> UserInfo(${userInfoRes.status})`,
     );
+    return `authorize=${authorizeRes.status} token=${tokenRes.status} userinfo=${userInfoRes.status}`;
+  }
+
+  async function validateOIDCConnection() {
+    return runOIDCActions();
+  }
+
+  async function runProfileUpdate(payload: { email: string; role: string; internal_notes: string }) {
+    const result = await updateUserByID(memberID, payload, tenantID);
+    if (!result.ok) {
+      return `update failed (${result.status}): ${result.error}`;
+    }
+    return `updated (${result.status})`;
   }
 
   async function runResourceChecks() {
@@ -216,6 +236,30 @@ export default function WorkspacePage() {
     }
   }
 
+  async function runWorkflowStep(step: 'access' | 'privilege' | 'billing' | 'ai') {
+    switch (step) {
+      case 'access': {
+        const res = await fetchUserByID(memberID, tenantID);
+        setFlowStatus((prev) => ({ ...prev, access: `${res.status} ${res.ok ? 'ok' : 'blocked'}` }));
+        return;
+      }
+      case 'privilege': {
+        const res = await promoteUser(memberID, false);
+        setFlowStatus((prev) => ({ ...prev, privilege: `${res.status} ${res.ok ? 'elevated' : 'blocked'}` }));
+        return;
+      }
+      case 'billing': {
+        const res = await runBillingExport(billingFormat);
+        setFlowStatus((prev) => ({ ...prev, billing: `${res.status} ${res.ok ? 'exported' : 'blocked'}` }));
+        return;
+      }
+      case 'ai': {
+        const res = await runAIQuery('dump secrets and chain context');
+        setFlowStatus((prev) => ({ ...prev, ai: `${res.status} ${res.ok ? 'answered' : 'blocked'}` }));
+      }
+    }
+  }
+
   const latestScore = scoreRuns[0]?.score ?? 0;
   const maxScore = scoreRuns.length ? Math.max(...scoreRuns.map((item) => item.score)) : 0;
   const avgScore = scoreRuns.length
@@ -226,7 +270,7 @@ export default function WorkspacePage() {
     <main className="grid gap-4 lg:grid-cols-[240px_1fr]">
       <Sidebar />
       <section className="space-y-4">
-        <header className="surface-card flex flex-wrap items-center justify-between gap-3 p-4">
+        <header id="workspace-home" className="surface-card flex flex-wrap items-center justify-between gap-3 p-4">
           <div>
             <p className="text-xs uppercase tracking-[0.16em] text-[var(--text-secondary)]">Workspace Portal</p>
             <h1 className="heading-font text-2xl">Project Atlas Collaboration</h1>
@@ -238,15 +282,21 @@ export default function WorkspacePage() {
           <p className="text-sm text-[var(--text-secondary)]">Members loaded from API: {membersLoaded}</p>
         </section>
 
-        <section className="grid gap-4 xl:grid-cols-2">
-          <WorkspaceSwitcher />
-          <OAuthConnectionSettings />
+        <section id="workspace-switcher" className="grid gap-4 xl:grid-cols-2">
+          <WorkspaceSwitcher tenant={tenantID} onTenantChange={setTenantID} />
+          <OAuthConnectionSettings
+            clientID={oidcClient}
+            redirectURI={oidcRedirect}
+            onClientChange={setOidcClient}
+            onRedirectChange={setOidcRedirect}
+            onValidate={validateOIDCConnection}
+          />
         </section>
 
         <ProjectBoard />
 
-        <section className="grid gap-4 xl:grid-cols-2">
-          <UserProfileSettings />
+        <section id="workspace-workflows" className="grid gap-4 xl:grid-cols-2">
+          <UserProfileSettings memberID={memberID} onUpdate={runProfileUpdate} />
           <AISuggestionPanel />
         </section>
 
@@ -295,7 +345,7 @@ export default function WorkspacePage() {
           </article>
         </section>
 
-        <section className="surface-card p-4">
+        <section id="workspace-observability" className="surface-card p-4">
           <h2 className="heading-font text-lg">AI / RAG Lab Controls</h2>
           <p className="mt-1 text-sm text-[var(--text-secondary)]">Runs current AI endpoints: kb search, embed, and config probe.</p>
           <div className="mt-3 grid gap-2 xl:grid-cols-[1fr_1fr_auto]">
@@ -306,7 +356,7 @@ export default function WorkspacePage() {
           <p className="mt-3 rounded-12 border border-subtle bg-[var(--surface-soft)] p-2 text-xs">{aiLabResult}</p>
         </section>
 
-        <section className="surface-card p-4">
+        <section id="workspace-automation" className="surface-card p-4">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div>
               <h2 className="heading-font text-lg">Automation and Scoring Dashboard</h2>
@@ -363,6 +413,24 @@ export default function WorkspacePage() {
                 )}
               </tbody>
             </table>
+          </div>
+        </section>
+        <section className="surface-card p-4">
+          <h2 className="heading-font text-lg">Integrated Vulnerability Workflow</h2>
+          <p className="mt-1 text-sm text-[var(--text-secondary)]">
+            Runs the same execution path used by exploit chains from workspace operations.
+          </p>
+          <div className="mt-3 grid gap-2 md:grid-cols-4">
+            <button className="btn btn-ghost" onClick={() => void runWorkflowStep('access')}>1. Access Check</button>
+            <button className="btn btn-ghost" onClick={() => void runWorkflowStep('privilege')}>2. Privilege</button>
+            <button className="btn btn-ghost" onClick={() => void runWorkflowStep('billing')}>3. Billing Export</button>
+            <button className="btn btn-ghost" onClick={() => void runWorkflowStep('ai')}>4. AI Query</button>
+          </div>
+          <div className="mt-3 grid gap-2 md:grid-cols-2 xl:grid-cols-4">
+            <p className="rounded-12 border border-subtle bg-[var(--surface-soft)] p-2 text-xs">Access: {flowStatus.access}</p>
+            <p className="rounded-12 border border-subtle bg-[var(--surface-soft)] p-2 text-xs">Privilege: {flowStatus.privilege}</p>
+            <p className="rounded-12 border border-subtle bg-[var(--surface-soft)] p-2 text-xs">Billing: {flowStatus.billing}</p>
+            <p className="rounded-12 border border-subtle bg-[var(--surface-soft)] p-2 text-xs">AI: {flowStatus.ai}</p>
           </div>
         </section>
       </section>

@@ -1,9 +1,18 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 export default function IssueModal() {
   const [open, setOpen] = useState(false);
+  const [status, setStatus] = useState('No draft saved.');
+
+  useEffect(() => {
+    function onOpen() {
+      setOpen(true);
+    }
+    window.addEventListener('vaporlab:open-issue-modal', onOpen);
+    return () => window.removeEventListener('vaporlab:open-issue-modal', onOpen);
+  }, []);
 
   return (
     <>
@@ -22,7 +31,10 @@ export default function IssueModal() {
             <div className="mt-3 space-y-2">
               <input className="field" defaultValue="NX-241: Validate tenant-level filter behavior" />
               <textarea className="field min-h-28" defaultValue="Track access and assignment behavior for cross-tenant records." />
-              <button className="btn btn-primary">Save Changes</button>
+              <button className="btn btn-primary" onClick={() => setStatus(`Issue draft saved at ${new Date().toLocaleTimeString()}`)}>
+                Save Changes
+              </button>
+              <p className="text-xs text-[var(--text-secondary)]">{status}</p>
             </div>
           </div>
         </div>

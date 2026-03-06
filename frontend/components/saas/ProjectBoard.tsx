@@ -1,10 +1,14 @@
+'use client';
+
+import { useMemo, useState } from 'react';
+
 type BoardIssue = {
   key: string;
   title: string;
   owner: string;
 };
 
-const columns: Record<string, BoardIssue[]> = {
+const seedColumns: Record<string, BoardIssue[]> = {
   Planned: [
     { key: 'NX-211', title: 'Finalize OAuth provider mapping', owner: 'Priya' },
     { key: 'NX-227', title: 'Add workspace member filters', owner: 'Omar' },
@@ -17,12 +21,38 @@ const columns: Record<string, BoardIssue[]> = {
 };
 
 export default function ProjectBoard() {
+  const [columns, setColumns] = useState(seedColumns);
+  const counts = useMemo(
+    () => Object.entries(columns).map(([label, issues]) => `${label}:${issues.length}`).join(' '),
+    [columns],
+  );
+
+  function openCreateIssue() {
+    window.dispatchEvent(new CustomEvent('vaporlab:open-issue-modal'));
+  }
+
+  function advanceIssue(issue: BoardIssue, from: string) {
+    const order = ['Planned', 'Active', 'Review'];
+    const fromIdx = order.indexOf(from);
+    const to = order[fromIdx + 1];
+    if (!to) {
+      return;
+    }
+    setColumns((prev) => {
+      const next = { ...prev };
+      next[from] = prev[from].filter((it) => it.key !== issue.key);
+      next[to] = [{ ...issue }, ...prev[to]];
+      return next;
+    });
+  }
+
   return (
-    <section className="surface-card p-4">
+    <section id="workspace-board" className="surface-card p-4">
       <div className="flex items-center justify-between">
         <h2 className="heading-font text-xl">Project Board</h2>
-        <button className="btn btn-primary">Create Issue</button>
+        <button className="btn btn-primary" onClick={openCreateIssue}>Create Issue</button>
       </div>
+      <p className="mt-2 text-xs text-[var(--text-secondary)]">Board status: {counts}</p>
       <div className="mt-4 grid gap-3 lg:grid-cols-3">
         {Object.entries(columns).map(([label, issues]) => (
           <div key={label} className="surface-soft p-3">
@@ -33,6 +63,9 @@ export default function ProjectBoard() {
                   <p className="text-xs text-[var(--secondary)]">{issue.key}</p>
                   <p className="mt-1 text-sm">{issue.title}</p>
                   <p className="mt-1 text-xs text-[var(--text-secondary)]">{issue.owner}</p>
+                  <button className="btn btn-ghost mt-2 text-xs" onClick={() => advanceIssue(issue, label)}>
+                    Move Forward
+                  </button>
                 </article>
               ))}
             </div>

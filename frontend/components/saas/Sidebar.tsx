@@ -1,4 +1,11 @@
-const navItems = ['Home', 'Projects', 'Backlog', 'Roadmap', 'Reports', 'Settings'];
+const navItems: Array<{ label: string; href: string }> = [
+  { label: 'Home', href: '#workspace-home' },
+  { label: 'Projects', href: '#workspace-board' },
+  { label: 'Backlog', href: '#workspace-workflows' },
+  { label: 'Roadmap', href: '#workspace-automation' },
+  { label: 'Reports', href: '#workspace-observability' },
+  { label: 'Settings', href: '#workspace-settings' },
+];
 
 export default function Sidebar() {
   return (
@@ -10,11 +17,11 @@ export default function Sidebar() {
       <nav className="mt-5 space-y-1 text-sm">
         {navItems.map((item, index) => (
           <a
-            key={item}
-            href="#"
+            key={item.label}
+            href={item.href}
             className={`block rounded-12 px-3 py-2 transition duration-normal ${index === 1 ? 'bg-[var(--primary)] text-[var(--surface)] font-semibold' : 'text-[var(--surface)] hover:bg-[var(--secondary)]'}`}
           >
-            {item}
+            {item.label}
           </a>
         ))}
       </nav>

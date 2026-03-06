@@ -174,13 +174,27 @@ export default function OperatorPage() {
       setBlindspotState('No blind-spot indicators found in current sample.');
     }
     if (eventsRes.ok) {
-      setTimeline(eventsRes.data?.events ?? []);
+      const events = eventsRes.data?.events ?? [];
+      setTimeline(events);
+      const eventLines = events
+        .slice()
+        .reverse()
+        .slice(0, 14)
+        .map((event) => `${event.timestamp} ${event.method} ${event.path} trace=${event.trace_id || 'none'} blindspot=${event.blindspot}`)
+        .join('\n');
+      if (eventLines) {
+        setResultLog(eventLines);
+      }
     }
   }
 
   useEffect(() => {
     void refreshRuntime();
     void refreshObservability();
+    const timer = window.setInterval(() => {
+      void refreshObservability();
+    }, 5000);
+    return () => window.clearInterval(timer);
   }, []);
 
   return (

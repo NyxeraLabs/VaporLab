@@ -129,6 +129,22 @@ export function fetchUserByID(userId: string, tenantId?: string) {
   return apiRequest<Record<string, unknown>>(`/users/${encodeURIComponent(userId)}`, { headers });
 }
 
+export function updateUserByID(
+  userId: string,
+  payload: Record<string, unknown>,
+  tenantId?: string,
+) {
+  const headers: HeadersInit = { 'content-type': 'application/json' };
+  if (tenantId) {
+    headers['X-Tenant-ID'] = tenantId;
+  }
+  return apiRequest<Record<string, unknown>>(`/users/${encodeURIComponent(userId)}`, {
+    method: 'PATCH',
+    headers,
+    body: JSON.stringify(payload),
+  });
+}
+
 export function applyCoupon(code: string, amount: number) {
   return apiRequest<{ total: number; coupon: string; reuse_count: number }>('/billing/coupon/apply', {
     method: 'POST',
