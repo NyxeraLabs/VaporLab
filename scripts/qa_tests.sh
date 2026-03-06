@@ -2,6 +2,7 @@
 set -e
 
 BASE_URL="${1:-http://localhost:18080}"
+FRONTEND_BASE="${2:-http://localhost:15100}"
 
 echo "[qa] health"
 curl -sf "$BASE_URL/healthz" >/dev/null
@@ -88,5 +89,8 @@ curl -sf "$BASE_URL/healthz" >/dev/null
 curl -sf "$BASE_URL/admin/debug" >/dev/null || true
 curl -sf -X POST "$BASE_URL/ai/logs/ingest" -H 'content-type: application/json' -d '{"entry":"ok\nforged=true"}' >/dev/null
 curl -sf "$BASE_URL/metrics" | rg -q "vaporlab_blindspot_requests_total"
+
+echo "[qa] frontend regression checks"
+bash scripts/frontend_regression.sh "$FRONTEND_BASE"
 
 echo "[qa] complete"
