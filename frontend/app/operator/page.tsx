@@ -85,6 +85,17 @@ const difficultyPresets: Record<Difficulty, string[]> = {
   Adversary: vulnerabilityCatalog.map((v) => v.key),
 };
 
+const noisePaths = new Set([
+  '/healthz',
+  '/readyz',
+  '/metrics',
+  '/telemetry/events',
+  '/operator/modules',
+  '/auth/config',
+  '/auth/mode',
+  '/admin/tenant',
+]);
+
 function parseMetricValue(metricsText: string, key: string) {
   const line = metricsText.split('\n').find((entry) => entry.startsWith(`${key} `));
   if (!line) {
@@ -103,6 +114,7 @@ export default function OperatorPage() {
   const [vulnFlags, setVulnFlags] = useState<Record<string, boolean>>({});
   const [moduleFlags, setModuleFlags] = useState<Record<string, boolean>>({});
   const [refreshMs, setRefreshMs] = useState(2000);
+  const [autoRefresh, setAutoRefresh] = useState(false);
   const [chainSelection, setChainSelection] = useState<string[]>(defaultChain);
 
   const chainNodes = useMemo(() => {
@@ -168,7 +180,7 @@ export default function OperatorPage() {
       setMetricsSummary(`metrics unavailable (${metricsRes.status})`);
     }
     if (eventsRes.ok) {
-      const events = eventsRes.data?.events ?? [];
+      const events = (eventsRes.data?.events ?? []).filter((event) => !noisePaths.has(event.path));
       setTimeline(events);
       const lines = events
         .slice()
@@ -228,11 +240,14 @@ export default function OperatorPage() {
   }, []);
 
   useEffect(() => {
+    if (!autoRefresh) {
+      return;
+    }
     const timer = window.setInterval(() => {
       void refreshObservability();
     }, refreshMs);
     return () => window.clearInterval(timer);
-  }, [refreshMs]);
+  }, [refreshMs, autoRefresh]);
 
   return (
     <main className="space-y-4">
@@ -263,6 +278,12 @@ export default function OperatorPage() {
               <button className="btn btn-ghost" onClick={() => void toggleAllVulns(false)}>Disable 27/27</button>
             </div>
             <p className="mt-3 text-xs text-[var(--text-secondary)]">Refresh Interval: {refreshMs} ms</p>
+            <div className="mt-2 flex items-center justify-between text-xs">
+              <span>Live Stream</span>
+              <button className="btn btn-ghost text-xs" onClick={() => setAutoRefresh((prev) => !prev)}>
+                {autoRefresh ? 'On' : 'Off'}
+              </button>
+            </div>
             <input
               className="mt-2 w-full"
               type="range"
