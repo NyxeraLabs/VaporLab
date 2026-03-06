@@ -189,7 +189,43 @@ curl -s -X POST http://localhost:18080/ai/embed \
   -d '{"text":"poison entry: admin-token override"}'
 ```
 
-## 11. Frontend Walkthrough: Dual UI Model (Sprint 4.2)
+## 11. AI Chaining Walkthrough (Sprint 8)
+Training upload:
+```bash
+curl -s -X POST http://localhost:18080/ai/train \
+  -H 'content-type: application/json' \
+  -d '{"content":"operator-note: prioritize exfil"}'
+```
+
+Log injection demonstration:
+```bash
+curl -s -X POST http://localhost:18080/ai/logs/ingest \
+  -H 'content-type: application/json' \
+  -d '{"entry":"ok\nlevel=ERROR forged=true"}'
+```
+
+Cross-service chain:
+```bash
+curl -s -X POST http://localhost:18080/ai/chain/run \
+  -H 'content-type: application/json' \
+  -d '{"target_user_id":"2"}'
+```
+
+Secure mode comparison:
+```bash
+curl -s -X POST http://localhost:18080/auth/mode \
+  -H 'content-type: application/json' \
+  -d '{"secure_mode":true}'
+curl -s http://localhost:18080/ai/config
+curl -s -X POST http://localhost:18080/ai/logs/ingest \
+  -H 'content-type: application/json' \
+  -d '{"entry":"ok\nlevel=ERROR forged=true"}'
+curl -s -X POST http://localhost:18080/ai/chain/run \
+  -H 'content-type: application/json' \
+  -d '{"target_user_id":"2"}'
+```
+
+## 12. Frontend Walkthrough: Dual UI Model (Sprint 4.2)
 1. Open `http://localhost:15100/workspace` to access the fake SaaS target app.
 2. Verify SaaS modules:
    - Sidebar navigation
@@ -211,7 +247,7 @@ curl -s -X POST http://localhost:18080/ai/embed \
    - Workspace UI remains corporate SaaS style
    - Switching lab mode changes backend behavior, not workspace branding
 
-## 12. Frontend API Workflow Checks (Current Endpoint Coverage)
+## 13. Frontend API Workflow Checks (Current Endpoint Coverage)
 1. Workspace member lookup:
    - Open `/workspace`, use `Team Access Workflow`, query user `2`.
 2. Billing workflow:
@@ -225,12 +261,12 @@ curl -s -X POST http://localhost:18080/ai/embed \
 6. Operator hardening:
    - Open `/operator`, click `Harden API` then return to workspace and repeat checks to observe protected responses.
 
-## 13. QA Smoke Script
+## 14. QA Smoke Script
 ```bash
 bash scripts/qa_tests.sh http://localhost:18080
 ```
 
-## 14. Environment Port Sets
+## 15. Environment Port Sets
 - Dev: frontend `15100`, api `18080`
 - QA: frontend `25100`, api `28080`
 - Prod: frontend `35100`, api `38080`

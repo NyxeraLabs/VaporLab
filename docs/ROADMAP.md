@@ -446,22 +446,22 @@ Add frontend views for OWASP 2023 discovery and resource abuse surfaces after AP
 
 ## 🚀 Sprint 8 – AI Chaining
 ### ✅ Development
-- [ ] Add training upload endpoint
-- [ ] Expose model config
-- [ ] Remove token limits
-- [ ] Add log injection flaw
-- [ ] Chain AI exploit across multiple services
+- [x] Add training upload endpoint
+- [x] Expose model config
+- [x] Remove token limits
+- [x] Add log injection flaw
+- [x] Chain AI exploit across multiple services
 
 ### 📘 Documentation
-- [ ] Document AI exploit chains
-- [ ] Add MITRE mapping draft
+- [x] Document AI exploit chains
+- [x] Add MITRE mapping draft
 
 ### 📖 User Guide
-- [ ] Add full AI exploitation chain tutorial
+- [x] Add full AI exploitation chain tutorial
 
 ### 💾 Commits
-- [ ] `feat(ai): add training upload`
-- [ ] `docs(ai): document exploit chain`
+- [x] `feat(ai): add training upload`
+- [x] `docs(ai): document exploit chain`
 
 ---
 

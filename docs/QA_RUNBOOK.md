@@ -40,3 +40,7 @@ This runbook tracks reproducible validation per sprint. Update status after each
 | 7 | Secret exfiltration via config | `GET /ai/config` in vulnerable and secure mode | Vulnerable mode exposes `api_key`; secure mode hides it | ready to execute |
 | 7 | RAG sensitive retrieval | `GET /kb/search?q=admin-token` | Seeded sensitive KB chunk is retrievable in vulnerable lab mode | ready to execute |
 | 7 | Vector poisoning scenario | `POST /ai/embed` with `admin-token` marker in both modes | Vulnerable mode accepts; secure mode rejects with `400` | ready to execute |
+| 8 | AI training upload abuse | `POST /ai/train` with attacker-supplied content | Endpoint accepts training content and increments corpus entries | ready to execute |
+| 8 | Token limit comparison | `GET /ai/config` in vulnerable and secure mode | Vulnerable returns `token_limit=0`; secure returns constrained limit | ready to execute |
+| 8 | AI log injection | `POST /ai/logs/ingest` with newline payload | Vulnerable stores unsanitized style entry; secure escapes control chars | ready to execute |
+| 8 | Cross-service AI chain | `POST /ai/chain/run` with target user id | Vulnerable mode reports chain success; secure mode reports blocked steps | ready to execute |
