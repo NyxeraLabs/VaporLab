@@ -1,0 +1,120 @@
+name: Release Engineering
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: "Release tag (example: v2.0.0)"
+        required: true
+        default: "v2.0.0"
+      secure_mode:
+        description: "Build secure-mode release"
+        required: true
+        type: boolean
+        default: true
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+  packages: write
+  id-token: write
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository_owner }}/vaporlab-api
+
+jobs:
+  release-build:
+    runs-on: ubuntu-latest
+    outputs:
+      release_tag: ${{ steps.meta.outputs.release_tag }}
+      image_ref: ${{ steps.meta.outputs.image_ref }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Resolve release metadata
+        id: meta
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "${GITHUB_REF:-}" == refs/tags/* ]]; then
+            TAG="${GITHUB_REF#refs/tags/}"
+          else
+            TAG="${{ inputs.release_tag }}"
+          fi
+          IMAGE_REF="${REGISTRY}/${IMAGE_NAME}:${TAG}"
+          echo "release_tag=${TAG}" >> "$GITHUB_OUTPUT"
+          echo "image_ref=${IMAGE_REF}" >> "$GITHUB_OUTPUT"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push API image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: |
+            ${{ steps.meta.outputs.image_ref }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+
+      - name: Generate image SBOM (SPDX JSON)
+        uses: anchore/sbom-action@v0
+        with:
+          image: ${{ steps.meta.outputs.image_ref }}
+          format: spdx-json
+          output-file: dist/vaporlab-api-${{ steps.meta.outputs.release_tag }}.sbom.spdx.json
+
+      - name: Upload SBOM artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: vaporlab-api-sbom-${{ steps.meta.outputs.release_tag }}
+          path: dist/vaporlab-api-${{ steps.meta.outputs.release_tag }}.sbom.spdx.json
+
+  sign-image:
+    runs-on: ubuntu-latest
+    needs: release-build
+    if: startsWith(needs.release-build.outputs.release_tag, 'v')
+    steps:
+      - name: Install cosign
+        uses: sigstore/cosign-installer@v3
+
+      - name: Cosign sign image (keyless)
+        env:
+          COSIGN_EXPERIMENTAL: "1"
+        shell: bash
+        run: |
+          set -euo pipefail
+          cosign sign --yes "${{ needs.release-build.outputs.image_ref }}"
+
+  publish-release:
+    runs-on: ubuntu-latest
+    needs:
+      - release-build
+      - sign-image
+    steps:
+      - name: Download SBOM artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: vaporlab-api-sbom-${{ needs.release-build.outputs.release_tag }}
+          path: dist
+
+      - name: Publish GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.release-build.outputs.release_tag }}
+          files: dist/vaporlab-api-${{ needs.release-build.outputs.release_tag }}.sbom.spdx.json
+          generate_release_notes: true

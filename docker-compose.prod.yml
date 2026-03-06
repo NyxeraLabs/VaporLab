@@ -23,15 +23,18 @@ services:
     container_name: vaporlab_api_prod
     environment:
       - SECURE_MODE=true
+      - HARDENING_ENABLED=true
       - JWT_SECRET=replace-in-prod
       - AI_API_KEY=replace-in-prod
     ports:
       - "38080:8080"
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:8080/healthz"]
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/healthz >/dev/null && wget -qO- http://localhost:8080/readyz >/dev/null"]
       interval: 30s
       timeout: 5s
       retries: 3
+      start_period: 20s
+    restart: unless-stopped
 
   postgres:
     image: postgres:16

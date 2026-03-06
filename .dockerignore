@@ -1,0 +1,14 @@
+.git
+.github
+.cache
+frontend
+docs
+attack-scenarios
+infra
+services
+scripts
+**/.DS_Store
+**/*.log
+**/*.tmp
+dist
+tmp
