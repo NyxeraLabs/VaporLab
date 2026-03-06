@@ -349,3 +349,30 @@ curl -sf http://localhost:35100/api/healthz
 curl -sf http://localhost:35100/api/readyz
 bash scripts/frontend_regression.sh http://localhost:35100
 ```
+
+## 19. Secure Mode Deployment and Defensive Configuration (Sprint 11)
+Production-leaning hardening profile:
+```bash
+export SECURE_MODE=true
+export HARDENING_ENABLED=true
+export JWT_SECRET='replace-with-32-plus-char-secret'
+export AI_API_KEY='replace-with-real-key'
+docker-compose -f docker-compose.prod.yml up -d --build
+```
+
+Validate effective secure mode:
+```bash
+curl -s http://localhost:38080/healthz
+curl -s http://localhost:38080/auth/config
+```
+
+Defensive OIDC flow:
+1. Authorize using registered redirect only: `https://app.vaporlab.local/callback`.
+2. Include both `state` and `nonce` in authorize requests.
+3. Exchange code via `POST /oidc/token` with `grant_type=authorization_code`, `client_id`, `client_secret`, `code`, `redirect_uri`.
+4. Call `/oidc/userinfo` only with `Authorization: Bearer <access_token>`.
+
+Defensive API controls:
+1. Always set tenant headers for user endpoints in secure mode.
+2. Monitor `429` responses as evidence of active global throttling.
+3. Keep `HARDENING_ENABLED=true` except for isolated vulnerable demos.

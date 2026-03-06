@@ -597,25 +597,25 @@ Add observability and blind-spot visibility panels to the frontend console after
 # 🛡 PHASE 7 – SECURE MODE
 ## 🚀 Sprint 11 – Hardening Toggle
 ### ✅ Development
-- [ ] Add global feature flag
-- [ ] Fix JWT validation
-- [ ] Fix BOLA
-- [ ] Add rate limiting
-- [ ] Restrict SSRF
-- [ ] Secure AI endpoints
-- [ ] Secure OIDC flows
+- [x] Add global feature flag
+- [x] Fix JWT validation
+- [x] Fix BOLA
+- [x] Add rate limiting
+- [x] Restrict SSRF
+- [x] Secure AI endpoints
+- [x] Secure OIDC flows
 
 ### 📘 Documentation
 - [x] Document secure mode behavior
-- [ ] Add comparison matrix (vulnerable vs secure)
+- [x] Add comparison matrix (vulnerable vs secure)
 
 ### 📖 User Guide
-- [ ] Add secure mode deployment guide
-- [ ] Add defensive configuration walkthrough
+- [x] Add secure mode deployment guide
+- [x] Add defensive configuration walkthrough
 
 ### 💾 Commits
-- [ ] `feat(toggle): add secure mode`
-- [ ] `docs(security): document secure mode`
+- [x] `feat(toggle): add secure mode`
+- [x] `docs(security): document secure mode`
 
 ---
 

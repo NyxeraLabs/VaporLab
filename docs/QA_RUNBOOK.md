@@ -57,5 +57,10 @@ This runbook tracks reproducible validation per sprint. Update status after each
 | 9.1 | Frontend OIDC visualizer | Run OAuth check and automation dashboard | Visualized chain displays authorize/token/userinfo statuses | ready to execute |
 | 10.1 | Frontend observability render | In `/operator`, click `Refresh Telemetry` | Metrics summary and timeline populate from live endpoints | ready to execute |
 | 10.1 | Frontend blind-spot indicator | Trigger `/admin/debug` then refresh telemetry | Missing-telemetry/blindspot panel flags expected coverage gaps | ready to execute |
+| 11 | Global hardening feature flag | Start with `SECURE_MODE=true` and `HARDENING_ENABLED=false`, then validate tampered JWT via `/auth/jwt/validate` | Effective secure mode is disabled and vulnerable behavior remains for demo mode | ready to execute |
+| 11 | JWT/BOLA secure enforcement | Enable secure mode and call `/auth/jwt/validate` with tampered token plus `GET /users` without `X-Tenant-ID` | JWT tamper rejected (`401`) and users listing blocked (`403`) | ready to execute |
+| 11 | Global rate limiting | Send >60 requests/min from same client to `/ai/query` in secure mode | Requests above threshold return `429` | ready to execute |
+| 11 | SSRF/OIDC hardening | In secure mode call `/ssrf/fetch` with internal URL and run full OIDC code flow (`/oidc/authorize` -> `/oidc/token` -> `/oidc/userinfo`) | Internal SSRF blocked; OIDC requires bound redirect+nonce/state+bearer token | ready to execute |
+| 11 | AI endpoint hardening | Call `/ai/train` in secure mode without `X-Admin:true` and with unsafe content markers | Request rejected with `403` (admin missing) or `400` (unsafe content) | ready to execute |
 | 12.1 | Frontend stability smoke | Run `scripts/frontend_regression.sh http://localhost:15100` repeatedly during long session | Health/workspace/operator endpoints remain reachable | ready to execute |
 | 12.1 | Frontend module regression | Run `bash scripts/qa_tests.sh http://localhost:18080 http://localhost:15100` | Frontend automation and observability checks pass with backend flows | ready to execute |
