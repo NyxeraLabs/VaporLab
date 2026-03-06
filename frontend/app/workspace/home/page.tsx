@@ -2,16 +2,21 @@
 
 import { useEffect, useState } from 'react';
 import { fetchHealth, fetchUsers, runAIQuery } from '../../../lib/api';
+import { readWorkspaceSession } from '../../../lib/workspaceSession';
 
 export default function WorkspaceHomePage() {
   const [runtime, setRuntime] = useState('Loading workspace runtime...');
   const [members, setMembers] = useState('0');
   const [brief, setBrief] = useState('No daily brief generated.');
+  const [tenant, setTenant] = useState('tenant-a');
 
   useEffect(() => {
     async function bootstrap() {
       try {
-        const [health, users] = await Promise.all([fetchHealth(), fetchUsers('tenant-a')]);
+        const session = readWorkspaceSession();
+        const tenantId = session?.tenant ?? 'tenant-a';
+        setTenant(tenantId);
+        const [health, users] = await Promise.all([fetchHealth(), fetchUsers(tenantId)]);
         const mode = (health.effective_secure_mode ?? health.secure_mode) ? 'Protected' : 'Standard';
         setRuntime(`${mode} runtime online`);
         setMembers(String(users.length));
@@ -41,6 +46,7 @@ export default function WorkspaceHomePage() {
         <article className="surface-card p-4">
           <p className="text-xs uppercase tracking-[0.12em] text-[var(--text-secondary)]">Active Members</p>
           <p className="heading-font mt-2 text-xl">{members}</p>
+          <p className="mt-1 text-xs text-[var(--text-secondary)]">Tenant: {tenant}</p>
         </article>
         <article className="surface-card p-4">
           <p className="text-xs uppercase tracking-[0.12em] text-[var(--text-secondary)]">Automation</p>

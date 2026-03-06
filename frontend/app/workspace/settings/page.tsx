@@ -1,13 +1,21 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import OAuthConnectionSettings from '../../../components/saas/OAuthConnectionSettings';
 import UserProfileSettings from '../../../components/saas/UserProfileSettings';
 import WorkspaceSwitcher from '../../../components/saas/WorkspaceSwitcher';
 import { fetchOIDCAuthorizeProbeWithNonce, fetchOIDCToken, fetchOIDCUserInfo, updateUserByID } from '../../../lib/api';
+import { readWorkspaceSession } from '../../../lib/workspaceSession';
 
 export default function WorkspaceSettingsPage() {
   const [tenantID, setTenantID] = useState('tenant-a');
+
+  useEffect(() => {
+    const session = readWorkspaceSession();
+    if (session?.tenant) {
+      setTenantID(session.tenant);
+    }
+  }, []);
   const [memberID] = useState('1');
   const [oidcClient, setOidcClient] = useState('lab');
   const [oidcRedirect, setOidcRedirect] = useState('https://app.vaporlab.local/callback');

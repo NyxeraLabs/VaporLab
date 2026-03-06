@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   fetchOIDCAuthorizeProbeWithNonce,
   fetchOIDCToken,
@@ -11,6 +11,7 @@ import {
   runAIQuery,
   runBillingExport,
 } from '../../../lib/api';
+import { readWorkspaceSession } from '../../../lib/workspaceSession';
 
 type ScoreRun = {
   at: string;
@@ -20,7 +21,7 @@ type ScoreRun = {
 };
 
 export default function WorkspaceRoadmapPage() {
-  const [tenantID] = useState('tenant-a');
+  const [tenantID, setTenantID] = useState('tenant-a');
   const [memberID] = useState('1');
   const [oidcClient] = useState('lab');
   const [oidcRedirect] = useState('https://app.vaporlab.local/callback');
@@ -30,6 +31,13 @@ export default function WorkspaceRoadmapPage() {
   const [scoreRuns, setScoreRuns] = useState<ScoreRun[]>([]);
   const [running, setRunning] = useState(false);
   const [exploitResults, setExploitResults] = useState<Array<{ name: string; ok: boolean; detail: string }>>([]);
+
+  useEffect(() => {
+    const session = readWorkspaceSession();
+    if (session?.tenant) {
+      setTenantID(session.tenant);
+    }
+  }, []);
 
   async function req(path: string, init?: RequestInit) {
     const base = process.env.NEXT_PUBLIC_API_BASE ?? 'http://localhost:18080';
@@ -261,6 +269,7 @@ export default function WorkspaceRoadmapPage() {
           <div>
             <h2 className="heading-font text-lg">Workflow Automation</h2>
             <p className="mt-1 text-sm text-[var(--text-secondary)]">Run cross-service workflow checks for roadmap execution.</p>
+            <p className="mt-1 text-xs text-[var(--text-secondary)]">Tenant context: {tenantID}</p>
           </div>
           <button className="btn btn-primary" onClick={() => void runAutomationDashboard()} disabled={running}>
             {running ? 'Running...' : 'Run Workflow'}

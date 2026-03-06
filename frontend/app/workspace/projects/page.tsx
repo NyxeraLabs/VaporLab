@@ -1,14 +1,22 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import ProjectBoard from '../../../components/saas/ProjectBoard';
 import UserProfileSettings from '../../../components/saas/UserProfileSettings';
 import { fetchUserByID, updateUserByID } from '../../../lib/api';
+import { readWorkspaceSession } from '../../../lib/workspaceSession';
 
 export default function WorkspaceProjectsPage() {
-  const [tenantID] = useState('tenant-a');
+  const [tenantID, setTenantID] = useState('tenant-a');
   const [memberID, setMemberID] = useState('1');
   const [memberResult, setMemberResult] = useState('No member lookup executed.');
+
+  useEffect(() => {
+    const session = readWorkspaceSession();
+    if (session?.tenant) {
+      setTenantID(session.tenant);
+    }
+  }, []);
 
   async function runMemberLookup() {
     const res = await fetchUserByID(memberID, tenantID);
@@ -30,6 +38,7 @@ export default function WorkspaceProjectsPage() {
         <article className="surface-card p-4">
           <h2 className="heading-font text-lg">Member Directory</h2>
           <p className="mt-1 text-sm text-[var(--text-secondary)]">Load profile cards by member id and tenant context.</p>
+          <p className="mt-1 text-xs text-[var(--text-secondary)]">Active tenant: {tenantID}</p>
           <div className="mt-3 flex gap-2">
             <input className="field" value={memberID} onChange={(event) => setMemberID(event.target.value)} placeholder="Member ID" />
             <button className="btn btn-primary" onClick={() => void runMemberLookup()}>Open Profile</button>
