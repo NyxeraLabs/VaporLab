@@ -4,7 +4,7 @@ import Image from 'next/image';
 import { useEffect, useState } from 'react';
 import Footer from '../components/common/Footer';
 import ModeBadge, { type OperatorMode } from '../components/operator/ModeBadge';
-import OperatorAccessGate from '../components/operator/OperatorAccessGate';
+import OperatorAccessGate, { STORAGE_KEY } from '../components/operator/OperatorAccessGate';
 import { fetchAuthConfig, fetchHealth } from '../lib/api';
 
 type OperatorLayoutProps = {
@@ -32,6 +32,12 @@ export default function OperatorLayout({ children, mode = 'VULNERABLE' }: Operat
     void refreshMode();
   }, []);
 
+  function logout() {
+    if (typeof window === 'undefined') return;
+    window.sessionStorage.removeItem(STORAGE_KEY);
+    window.location.reload();
+  }
+
   return (
     <div className="theme-operator app-shell">
       <OperatorAccessGate>
@@ -49,9 +55,12 @@ export default function OperatorLayout({ children, mode = 'VULNERABLE' }: Operat
               <a className="btn btn-ghost" href="/operator">
                 Dashboard
               </a>
-              <a className="btn btn-ghost" href="/workspace">
+              <a className="btn btn-ghost" href="/workspace/home">
                 Target SaaS
               </a>
+              <button className="btn btn-ghost" onClick={logout}>
+                Logout
+              </button>
             </nav>
           </header>
           <div className="flex-1">{children}</div>

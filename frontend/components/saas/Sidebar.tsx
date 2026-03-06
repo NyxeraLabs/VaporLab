@@ -1,13 +1,20 @@
+'use client';
+
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+
 const navItems: Array<{ label: string; href: string }> = [
-  { label: 'Home', href: '#workspace-home' },
-  { label: 'Projects', href: '#workspace-board' },
-  { label: 'Backlog', href: '#workspace-workflows' },
-  { label: 'Roadmap', href: '#workspace-automation' },
-  { label: 'Reports', href: '#workspace-observability' },
-  { label: 'Settings', href: '#workspace-settings' },
+  { label: 'Home', href: '/workspace/home' },
+  { label: 'Projects', href: '/workspace/projects' },
+  { label: 'Backlog', href: '/workspace/backlog' },
+  { label: 'Roadmap', href: '/workspace/roadmap' },
+  { label: 'Reports', href: '/workspace/reports' },
+  { label: 'Settings', href: '/workspace/settings' },
 ];
 
 export default function Sidebar() {
+  const pathname = usePathname();
+
   return (
     <aside className="rounded-16 bg-[var(--sidebar)] p-4 text-[var(--surface)]">
       <div className="surface-soft p-3">
@@ -16,13 +23,19 @@ export default function Sidebar() {
       </div>
       <nav className="mt-5 space-y-1 text-sm">
         {navItems.map((item, index) => (
-          <a
+          <Link
             key={item.label}
             href={item.href}
-            className={`block rounded-12 px-3 py-2 transition duration-normal ${index === 1 ? 'bg-[var(--primary)] text-[var(--surface)] font-semibold' : 'text-[var(--surface)] hover:bg-[var(--secondary)]'}`}
+            className={`block rounded-12 px-3 py-2 transition duration-normal ${
+              pathname === item.href
+                ? 'bg-[var(--primary)] text-[var(--surface)] font-semibold'
+                : index === 1
+                  ? 'text-[var(--surface)] hover:bg-[var(--secondary)]'
+                  : 'text-[var(--surface)] hover:bg-[var(--secondary)]'
+            }`}
           >
             {item.label}
-          </a>
+          </Link>
         ))}
       </nav>
     </aside>

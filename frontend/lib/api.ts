@@ -15,6 +15,7 @@ export type AuthConfigResponse = {
 
 export type ModuleControlResponse = {
   modules: Record<string, boolean>;
+  vulnerabilities?: Record<string, boolean>;
   secure_mode: boolean;
   hardening_enabled?: boolean;
   effective_secure_mode?: boolean;
@@ -189,6 +190,22 @@ export function setModuleControl(module: string, enabled: boolean) {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ module, enabled }),
+  });
+}
+
+export function setVulnerabilityControl(vulnerability: string, enabled: boolean) {
+  return apiRequest<ModuleControlResponse>('/operator/modules', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ vulnerability, enabled }),
+  });
+}
+
+export function setVulnerabilityControls(vulnerabilities: Record<string, boolean>) {
+  return apiRequest<ModuleControlResponse>('/operator/modules', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ vulnerabilities }),
   });
 }
 

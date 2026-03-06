@@ -6,6 +6,9 @@ services:
     environment:
       - NEXT_PUBLIC_API_BASE=http://localhost:38080
       - NEXT_PUBLIC_OPERATOR_ACCESS_KEY=vaporlab-ops
+      - NEXT_PUBLIC_OPERATOR_USER=operator
+      - NEXT_PUBLIC_OPERATOR_PASSWORD=vaporlab
+      - NEXT_PUBLIC_OPERATOR_MFA_CODE=000000
       - NODE_ENV=production
     ports:
       - "35100:3000"

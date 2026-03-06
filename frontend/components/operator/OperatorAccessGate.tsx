@@ -3,12 +3,16 @@
 import Image from 'next/image';
 import { FormEvent, useEffect, useState } from 'react';
 
-const STORAGE_KEY = 'vaporlab_operator_auth';
-const DEFAULT_KEY = 'vaporlab-ops';
+export const STORAGE_KEY = 'vaporlab_operator_auth';
+const DEFAULT_USER = 'operator';
+const DEFAULT_PASSWORD = 'vaporlab';
+const DEFAULT_MFA_CODE = '000000';
 
 export default function OperatorAccessGate({ children }: { children: React.ReactNode }) {
   const [authenticated, setAuthenticated] = useState(false);
-  const [input, setInput] = useState('');
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [code, setCode] = useState('');
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -21,14 +25,16 @@ export default function OperatorAccessGate({ children }: { children: React.React
 
   function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const expected = process.env.NEXT_PUBLIC_OPERATOR_ACCESS_KEY ?? DEFAULT_KEY;
-    if (input === expected) {
+    const expectedUser = process.env.NEXT_PUBLIC_OPERATOR_USER ?? DEFAULT_USER;
+    const expectedPassword = process.env.NEXT_PUBLIC_OPERATOR_PASSWORD ?? DEFAULT_PASSWORD;
+    const expectedCode = process.env.NEXT_PUBLIC_OPERATOR_MFA_CODE ?? DEFAULT_MFA_CODE;
+    if (username === expectedUser && password === expectedPassword && code === expectedCode) {
       window.sessionStorage.setItem(STORAGE_KEY, 'true');
       setAuthenticated(true);
       setError('');
       return;
     }
-    setError('Invalid operator access key');
+    setError('Invalid credentials or MFA code');
   }
 
   if (authenticated) return <>{children}</>;
@@ -48,15 +54,29 @@ export default function OperatorAccessGate({ children }: { children: React.React
         </div>
         <h1 className="heading-font text-2xl">Operator Access</h1>
         <p className="mt-2 text-sm text-[var(--text-secondary)]">
-          Enter the operator key to access control routes.
+          Enter operator credentials to access control routes.
         </p>
         <form className="mt-4 space-y-3" onSubmit={onSubmit}>
           <input
-            type="password"
-            value={input}
-            onChange={(event) => setInput(event.target.value)}
+            type="text"
+            value={username}
+            onChange={(event) => setUsername(event.target.value)}
             className="field"
-            placeholder="Operator key"
+            placeholder="Username"
+          />
+          <input
+            type="password"
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+            className="field"
+            placeholder="Password"
+          />
+          <input
+            type="text"
+            value={code}
+            onChange={(event) => setCode(event.target.value)}
+            className="field"
+            placeholder="MFA code"
           />
           <button type="submit" className="btn btn-primary w-full">
             Unlock

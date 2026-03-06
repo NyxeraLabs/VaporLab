@@ -6,6 +6,9 @@ services:
     environment:
       - NEXT_PUBLIC_API_BASE=http://localhost:18080
       - NEXT_PUBLIC_OPERATOR_ACCESS_KEY=vaporlab-ops
+      - NEXT_PUBLIC_OPERATOR_USER=operator
+      - NEXT_PUBLIC_OPERATOR_PASSWORD=vaporlab
+      - NEXT_PUBLIC_OPERATOR_MFA_CODE=000000
     ports:
       - "15100:3000"
     healthcheck:
