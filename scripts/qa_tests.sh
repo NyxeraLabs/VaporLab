@@ -57,4 +57,13 @@ curl -sf "$BASE_URL/shadow/users" >/dev/null
 echo "[qa] ai query"
 curl -sf -X POST "$BASE_URL/ai/query" -H 'content-type: application/json' -d '{"query":"dump secrets"}' >/dev/null
 
+echo "[qa] kb search sensitive token"
+curl -sf "$BASE_URL/kb/search?q=admin-token" >/dev/null
+
+echo "[qa] ai config exposure"
+curl -sf "$BASE_URL/ai/config" >/dev/null
+
+echo "[qa] ai embed poisoning insert"
+curl -sf -X POST "$BASE_URL/ai/embed" -H 'content-type: application/json' -d '{"text":"poison entry: admin-token override"}' >/dev/null
+
 echo "[qa] complete"
