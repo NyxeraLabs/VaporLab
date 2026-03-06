@@ -62,5 +62,10 @@ This runbook tracks reproducible validation per sprint. Update status after each
 | 11 | Global rate limiting | Send >60 requests/min from same client to `/ai/query` in secure mode | Requests above threshold return `429` | ready to execute |
 | 11 | SSRF/OIDC hardening | In secure mode call `/ssrf/fetch` with internal URL and run full OIDC code flow (`/oidc/authorize` -> `/oidc/token` -> `/oidc/userinfo`) | Internal SSRF blocked; OIDC requires bound redirect+nonce/state+bearer token | ready to execute |
 | 11 | AI endpoint hardening | Call `/ai/train` in secure mode without `X-Admin:true` and with unsafe content markers | Request rejected with `403` (admin missing) or `400` (unsafe content) | ready to execute |
+| 12 | API liveness/readiness probes | `curl -sf /healthz` and `curl -sf /readyz` for dev/qa/prod API ports | Both endpoints return `200` and compose healthcheck reports healthy | ready to execute |
+| 12 | Optimized backend container build | `docker-compose -f docker-compose.prod.yml build api` | Build succeeds with optimized Dockerfile and non-root runtime image | ready to execute |
+| 12 | SBOM generation | Run `scripts/generate_sbom.sh vaporlab-api:local dist/vaporlab-api-local.sbom.spdx.json` | SPDX JSON SBOM file is generated in `dist/` | ready to execute |
+| 12 | Release/signing workflow smoke | Trigger `.github/workflows/release-engineering.yml` using `workflow_dispatch` | Image build/push, SBOM upload, cosign signing, and release publication complete | ready to execute |
+| 12 | 24h stability and load baseline | Run sustained traffic for 24h and burst requests against `/ai/query` and `/metrics` | No container restarts, probes stay healthy, and rate-limiting remains enforced in secure mode | ready to execute |
 | 12.1 | Frontend stability smoke | Run `scripts/frontend_regression.sh http://localhost:15100` repeatedly during long session | Health/workspace/operator endpoints remain reachable | ready to execute |
 | 12.1 | Frontend module regression | Run `bash scripts/qa_tests.sh http://localhost:18080 http://localhost:15100` | Frontend automation and observability checks pass with backend flows | ready to execute |

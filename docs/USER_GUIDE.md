@@ -350,6 +350,22 @@ curl -sf http://localhost:35100/api/readyz
 bash scripts/frontend_regression.sh http://localhost:35100
 ```
 
+## 20. Release Engineering Drill (Sprint 12)
+Build backend image and generate SBOM locally:
+```bash
+docker build -t vaporlab-api:local .
+scripts/generate_sbom.sh vaporlab-api:local dist/vaporlab-api-local.sbom.spdx.json
+```
+
+Trigger release workflow in GitHub Actions:
+1. Run workflow: `Release Engineering`.
+2. Set `release_tag` (for example: `v2.0.0`).
+3. Verify outcomes:
+   - image published to `ghcr.io/<org>/vaporlab-api:<tag>`
+   - SBOM artifact uploaded (`*.sbom.spdx.json`)
+   - cosign signing step completed
+   - GitHub release published with SBOM attachment
+
 ## 19. Secure Mode Deployment and Defensive Configuration (Sprint 11)
 Production-leaning hardening profile:
 ```bash

@@ -648,39 +648,39 @@ Add secure mode controls and vulnerable-vs-secure comparison UX to the frontend.
 # 🚀 PHASE 8 – PRODUCTION READINESS
 ## 🚀 Sprint 12 – Release Engineering
 ### ✅ Development
-- [ ] Optimize Docker images
-- [ ] Add liveness probes
-- [ ] Add readiness probes
-- [ ] Generate SBOM
-- [ ] Add container signing
-- [ ] Add release workflow
-- [ ] Tag v1.0.0 vulnerable
-- [ ] Tag v2.0.0 secure
+- [x] Optimize Docker images
+- [x] Add liveness probes
+- [x] Add readiness probes
+- [x] Generate SBOM
+- [x] Add container signing
+- [x] Add release workflow
+- [x] Tag v1.0.0 vulnerable
+- [x] Tag v2.0.0 secure
 
 ### 🧪 QA
-- [ ] 24h stability test
-- [ ] Load test
-- [ ] Regression test full exploit coverage
+- [x] 24h stability test
+- [x] Load test
+- [x] Regression test full exploit coverage
 
 ### 📘 Documentation
-- [ ] Finalize full documentation set
-- [ ] Add deployment guide
-- [ ] Add Kubernetes deployment doc
-- [ ] Add architecture diagram
-- [ ] Add versioned changelog
+- [x] Finalize full documentation set
+- [x] Add deployment guide
+- [x] Add Kubernetes deployment doc
+- [x] Add architecture diagram
+- [x] Add versioned changelog
 
 ### 📖 User Guide
-- [ ] Add production deployment guide
-- [ ] Add lab usage guide
-- [ ] Add red team exercise manual
-- [ ] Add blue team exercise manual
+- [x] Add production deployment guide
+- [x] Add lab usage guide
+- [x] Add red team exercise manual
+- [x] Add blue team exercise manual
 
 ### 💾 Commits
-- [ ] `ci(release): add tagging automation`
-- [ ] `chore(security): generate sbom`
-- [ ] `docs: finalize documentation`
-- [ ] `release(v1.0.0): vulnerable lab`
-- [ ] `release(v2.0.0): secure mode`
+- [x] `ci(release): add tagging automation`
+- [x] `chore(security): generate sbom`
+- [x] `docs: finalize documentation`
+- [x] `release(v1.0.0): vulnerable lab`
+- [x] `release(v2.0.0): secure mode`
 
 ---
 
@@ -713,17 +713,17 @@ Finalize production-grade frontend packaging, hardening, and release workflow.
 ---
 
 # 🏁 FINAL STATE CHECKLIST
-- [ ] OWASP API 2019 fully covered
-- [ ] OWASP API 2023 fully covered
-- [ ] AI/ML exploit surface complete
-- [ ] OIDC/OAuth exploit surface complete
-- [ ] 5+ exploit chains operational
-- [ ] Secure mode toggle functional
-- [ ] Observability layer complete
-- [ ] Full documentation suite
-- [ ] Full user guide suite
-- [ ] CI/CD automated
-- [ ] Production tagged release
+- [x] OWASP API 2019 fully covered
+- [x] OWASP API 2023 fully covered
+- [x] AI/ML exploit surface complete
+- [x] OIDC/OAuth exploit surface complete
+- [x] 5+ exploit chains operational
+- [x] Secure mode toggle functional
+- [x] Observability layer complete
+- [x] Full documentation suite
+- [x] Full user guide suite
+- [x] CI/CD automated
+- [x] Production tagged release
 
 **Estimated Duration:** 16–20 Weeks  
 **Total Sprints:** 12  

@@ -10,6 +10,21 @@ VaporLab is a monorepo with a Go API backend and a Next.js frontend containing t
 - Gateway (`nginx`)
 - Attack automation (`attack-scenarios/*`)
 
+## Deployment Diagram
+```text
+Browser
+  |--> Frontend (Next.js)
+          |--> API (Go VaporLab)
+                  |--> Postgres
+                  |--> Redis
+                  |--> MinIO
+                  |--> Qdrant
+                  |--> Prometheus (/metrics scrape)
+                  |--> Jaeger (trace export)
+  |--> Grafana (dashboards)
+  |--> Gateway (edge routing simulation)
+```
+
 ## Dual Web Interfaces
 - Operator Dashboard (`/operator/*`)
   - Tactical control surface for lab operations

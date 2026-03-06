@@ -1,19 +1,30 @@
 # Dev Log 14 - Sprint 12 Release Engineering
 
 ## Development tasks ✅
-- Added release-oriented CI/CD flow, liveness/readiness endpoints, release-tag automation, and deployment-ready compose topology.
+- Optimized backend container build (`Dockerfile`) with cache mounts, trimpath build flags, and non-root runtime user.
+- Added API liveness/readiness healthchecks (`/healthz` + `/readyz`) to dev/qa/prod compose profiles.
+- Added SBOM generation script (`scripts/generate_sbom.sh`) supporting `syft` or `docker sbom`.
+- Added release workflow (`.github/workflows/release-engineering.yml`) for image build/push, SBOM artifact generation, cosign keyless signing, and GitHub release publishing.
+- Added `.dockerignore` to reduce build context and improve image build performance.
 
 ## Dev testing tasks 🧪
-- Ran regression of QA scripts and workflow YAML validation.
+- Validated compose configuration for dev/qa/prod after probe and env updates.
+- Validated Go test suite after release-engineering changes.
 
 ## QA tasks 🧪
-- Verified release pipeline behavior and tagging steps.
+- Extended runbook with Sprint 12 checks for probe validation, SBOM generation, release/signing workflow smoke, and stability/load baselines.
 
 ## Documentation tasks 📘
-- Finalized deployment, architecture, and versioned documentation set.
+- Expanded release engineering manual with workflow inputs, outputs, signing flow, and SBOM handling.
+- Updated deployment and Kubernetes deployment guides with probe and secure runtime guidance.
+- Updated changelog and roadmap completion state for Sprint 12.
 
 ## User Guide updates 📖
-- Added production deployment and red/blue team exercise guidance.
+- Production deployment and defensive usage coverage remains available through deployment/user-guide docs and frontend operations runbooks.
 
 ## Commit messages 💾
-- ci(release): add tagging automation\n- chore(security): generate sbom\n- docs: finalize documentation\n- release(v1.0.0): vulnerable lab\n- release(v2.0.0): secure mode
+- ci(release): add tagging automation
+- chore(security): generate sbom
+- docs: finalize documentation
+- release(v1.0.0): vulnerable lab
+- release(v2.0.0): secure mode
