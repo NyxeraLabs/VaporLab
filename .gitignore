@@ -15,6 +15,12 @@
 /.cache/
 .env
 .env.*
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+frontend/.turbo/
+frontend/.npm/
+frontend/coverage/
 
 # Logs and temp
 *.log

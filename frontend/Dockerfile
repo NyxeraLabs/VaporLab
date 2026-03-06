@@ -17,6 +17,7 @@ COPY components ./components
 COPY lib ./lib
 COPY layouts ./layouts
 COPY themes ./themes
+COPY public ./public
 RUN npm run build
 
 FROM node:20-alpine AS runner

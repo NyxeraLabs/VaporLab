@@ -7,10 +7,12 @@ import VulnerabilityCard from '../../components/operator/VulnerabilityCard';
 import {
   fetchAuthConfig,
   fetchHealth,
+  fetchModuleControls,
   fetchMetricsText,
   fetchTenantManagement,
   fetchTelemetryEvents,
   probeChain,
+  setModuleControl,
   setAuthMode,
   type TelemetryEvent,
 } from '../../lib/api';
@@ -66,9 +68,38 @@ export default function OperatorPage() {
   const [blindspotState, setBlindspotState] = useState('No blind-spot analysis yet.');
   const [timeline, setTimeline] = useState<TelemetryEvent[]>([]);
   const [secureRuntime, setSecureRuntime] = useState(false);
+  const [labScore, setLabScore] = useState(0);
 
-  function updateModule(title: string, active: boolean) {
+  function moduleToKey(title: string): string {
+    switch (title) {
+      case 'Broken Object Level Authorization':
+        return 'access_control';
+      case 'Command Injection Surface':
+        return 'injection';
+      case 'OAuth Misconfiguration':
+        return 'identity';
+      case 'Prompt Chaining Exposure':
+        return 'ai_ml';
+      case 'Inventory Drift':
+        return 'configuration';
+      default:
+        return '';
+    }
+  }
+
+  async function updateModule(title: string, active: boolean) {
+    const key = moduleToKey(title);
+    if (!key) {
+      return;
+    }
+    const res = await setModuleControl(key, active);
+    if (!res.ok) {
+      appendLog(`module update failed (${key}) -> ${res.status} ${res.error}`);
+      return;
+    }
     setModules((prev) => prev.map((item) => (item.title === title ? { ...item, active } : item)));
+    appendLog(`module ${key} -> ${active ? 'on' : 'off'}`);
+    await refreshRuntime();
   }
 
   function appendLog(message: string) {
@@ -76,11 +107,12 @@ export default function OperatorPage() {
   }
 
   async function refreshRuntime() {
-    const [healthRes, authCfgRes, tenantRes, chainRes] = await Promise.all([
+    const [healthRes, authCfgRes, tenantRes, chainRes, moduleRes] = await Promise.all([
       fetchHealth(),
       fetchAuthConfig(),
       fetchTenantManagement(),
       probeChain(),
+      fetchModuleControls(),
     ]);
     const effectiveSecure = healthRes.effective_secure_mode ?? healthRes.secure_mode;
     const secure = effectiveSecure ? 'HARDENED' : 'VULNERABLE';
@@ -89,6 +121,20 @@ export default function OperatorPage() {
     const tenantState = tenantRes.ok && tenantRes.data?.unsafe ? 'unsafe-tenant-admin' : 'tenant-controls-on';
     setRuntime(`${secure} | ${weak} | ${tenantState}`);
     setChainSignal(chainRes.data?.chain ?? `chain unavailable (${chainRes.status})`);
+    if (moduleRes.ok && moduleRes.data?.modules) {
+      const activeMap = moduleRes.data.modules;
+      setModules((prev) =>
+        prev.map((item) => {
+          const key = moduleToKey(item.title);
+          if (!key) {
+            return item;
+          }
+          return { ...item, active: Boolean(activeMap[key]) };
+        }),
+      );
+      const enabledCount = Object.values(activeMap).filter(Boolean).length;
+      setLabScore(Math.round((enabledCount / 5) * 100));
+    }
   }
 
   async function applyMode(secureMode: boolean) {
@@ -154,6 +200,7 @@ export default function OperatorPage() {
         </div>
         <p className="mt-3 text-sm text-[var(--text-secondary)]">Runtime: {runtime}</p>
         <p className="mt-1 text-xs text-[var(--text-secondary)]">Chain: {chainSignal}</p>
+        <p className="mt-1 text-xs text-[var(--text-secondary)]">Lab Vulnerability Score: {labScore}/100</p>
       </section>
 
       <DifficultySelector value={difficulty} onChange={setDifficulty} />
@@ -168,8 +215,8 @@ export default function OperatorPage() {
               active={module.active}
             />
             <div className="flex gap-2">
-              <button className="btn btn-ghost text-xs" onClick={() => updateModule(module.title, true)}>Module On</button>
-              <button className="btn btn-ghost text-xs" onClick={() => updateModule(module.title, false)}>Module Off</button>
+              <button className="btn btn-ghost text-xs" onClick={() => void updateModule(module.title, true)}>Module On</button>
+              <button className="btn btn-ghost text-xs" onClick={() => void updateModule(module.title, false)}>Module Off</button>
             </div>
           </div>
         ))}
