@@ -1,0 +1,49 @@
+name: Frontend Release Packaging
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - 'frontend/**'
+      - '.github/workflows/frontend-release.yml'
+
+jobs:
+  package-frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install frontend deps
+        shell: bash
+        run: |
+          set -e
+          cd frontend
+          npm install
+
+      - name: Build frontend
+        shell: bash
+        run: |
+          set -e
+          cd frontend
+          npm run build
+
+      - name: Package standalone bundle
+        shell: bash
+        run: |
+          set -e
+          mkdir -p dist
+          tar -czf dist/vaporlab-frontend-bundle.tgz -C frontend .next/standalone .next/static next.config.js package.json
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: vaporlab-frontend-bundle
+          path: dist/vaporlab-frontend-bundle.tgz
