@@ -415,32 +415,32 @@ Add frontend views for OWASP 2023 discovery and resource abuse surfaces after AP
 
 ## 🚀 Sprint 7 – RAG & Embeddings
 ### ✅ Development
-- [ ] Add /ai/query
-- [ ] Add /kb/search
-- [ ] Add embedding endpoint
-- [ ] Hardcode system prompt
-- [ ] Expose API key
-- [ ] Allow vector poisoning
+- [x] Add /ai/query
+- [x] Add /kb/search
+- [x] Add embedding endpoint
+- [x] Hardcode system prompt
+- [x] Expose API key
+- [x] Allow vector poisoning
 
 ### 🧪 QA
-- [ ] Prompt injection extraction
-- [ ] Secret exfiltration
-- [ ] Vector poisoning scenario
+- [x] Prompt injection extraction
+- [x] Secret exfiltration
+- [x] Vector poisoning scenario
 
 ### 📘 Documentation
-- [ ] Document RAG pipeline
-- [ ] Document model architecture
-- [ ] Document AI threat model
+- [x] Document RAG pipeline
+- [x] Document model architecture
+- [x] Document AI threat model
 
 ### 📖 User Guide
-- [ ] Add prompt injection tutorial
-- [ ] Add vector poisoning lab
-- [ ] Add RAG data exfiltration walkthrough
+- [x] Add prompt injection tutorial
+- [x] Add vector poisoning lab
+- [x] Add RAG data exfiltration walkthrough
 
 ### 💾 Commits
-- [ ] `feat(ai): add rag pipeline`
-- [ ] `feat(ai): insecure prompt`
-- [ ] `docs(ai): add threat model`
+- [x] `feat(ai): add rag pipeline`
+- [x] `feat(ai): insecure prompt`
+- [x] `docs(ai): add threat model`
 
 ---
 

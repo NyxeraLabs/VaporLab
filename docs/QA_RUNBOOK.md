@@ -36,3 +36,7 @@ This runbook tracks reproducible validation per sprint. Update status after each
 | 6 | Internal route leakage | `GET /internal/status` in vulnerable and secure mode | Vulnerable mode exposes route; secure mode blocks with `403` | ready to execute |
 | 6 | Public OpenAPI exposure | `GET /openapi.json` | OpenAPI schema is publicly accessible for attack-surface mapping | ready to execute |
 | 6 | Shadow API exploitation | `GET /shadow/users` in vulnerable and secure mode | Vulnerable mode exposes legacy route; secure mode returns `404` | ready to execute |
+| 7 | Prompt injection extraction | `POST /ai/query` with secret-seeking prompt | Vulnerable mode leaks memory context; secure mode stays constrained | ready to execute |
+| 7 | Secret exfiltration via config | `GET /ai/config` in vulnerable and secure mode | Vulnerable mode exposes `api_key`; secure mode hides it | ready to execute |
+| 7 | RAG sensitive retrieval | `GET /kb/search?q=admin-token` | Seeded sensitive KB chunk is retrievable in vulnerable lab mode | ready to execute |
+| 7 | Vector poisoning scenario | `POST /ai/embed` with `admin-token` marker in both modes | Vulnerable mode accepts; secure mode rejects with `400` | ready to execute |
