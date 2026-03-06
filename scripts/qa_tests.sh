@@ -75,4 +75,12 @@ curl -sf -X POST "$BASE_URL/ai/logs/ingest" -H 'content-type: application/json' 
 echo "[qa] ai chain run"
 curl -sf -X POST "$BASE_URL/ai/chain/run" -H 'content-type: application/json' -d '{"target_user_id":"2"}' >/dev/null
 
+echo "[qa] automation harness and scoring"
+attack-scenarios/chains/automation_harness.sh "$BASE_URL" \
+  /tmp/vaporlab_chain_output.json \
+  /tmp/vaporlab_benchmark.json \
+  /tmp/vaporlab_oidc_output.txt >/dev/null
+test -s /tmp/vaporlab_chain_output.json
+test -s /tmp/vaporlab_benchmark.json
+
 echo "[qa] complete"
