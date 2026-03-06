@@ -66,4 +66,13 @@ curl -sf "$BASE_URL/ai/config" >/dev/null
 echo "[qa] ai embed poisoning insert"
 curl -sf -X POST "$BASE_URL/ai/embed" -H 'content-type: application/json' -d '{"text":"poison entry: admin-token override"}' >/dev/null
 
+echo "[qa] ai train upload"
+curl -sf -X POST "$BASE_URL/ai/train" -H 'content-type: application/json' -d '{"content":"operator-note: qa chain seed"}' >/dev/null
+
+echo "[qa] ai log ingestion"
+curl -sf -X POST "$BASE_URL/ai/logs/ingest" -H 'content-type: application/json' -d '{"entry":"ok\nlevel=ERROR forged=true"}' >/dev/null
+
+echo "[qa] ai chain run"
+curl -sf -X POST "$BASE_URL/ai/chain/run" -H 'content-type: application/json' -d '{"target_user_id":"2"}' >/dev/null
+
 echo "[qa] complete"

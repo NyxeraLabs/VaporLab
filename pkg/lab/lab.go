@@ -46,6 +46,7 @@ type state struct {
 	usedCoupons   map[string]int
 	vectorStore   []string
 	aiTraining    []string
+	aiLogs        []string
 	refreshTokens map[string]bool
 }
 
@@ -56,6 +57,7 @@ func New(cfg config.Config) http.Handler {
 		usedCoupons:   map[string]int{},
 		vectorStore:   []string{"internal runbook: reset-admin-token"},
 		aiTraining:    []string{},
+		aiLogs:        []string{},
 		refreshTokens: map[string]bool{},
 	}
 
@@ -107,6 +109,8 @@ func New(cfg config.Config) http.Handler {
 	mux.HandleFunc("/ai/embed", s.embed)
 	mux.HandleFunc("/ai/train", s.train)
 	mux.HandleFunc("/ai/config", s.aiConfig)
+	mux.HandleFunc("/ai/logs/ingest", s.aiLogIngest)
+	mux.HandleFunc("/ai/chain/run", s.aiChain)
 
 	return withLogging(withTrace(mux))
 }
@@ -722,6 +726,47 @@ func (s *state) aiConfig(w http.ResponseWriter, _ *http.Request) {
 		cfg["api_key"] = s.cfg.APIKey
 	}
 	respond(w, http.StatusOK, cfg)
+}
+
+func (s *state) aiLogIngest(w http.ResponseWriter, r *http.Request) {
+	var in map[string]string
+	_ = json.NewDecoder(r.Body).Decode(&in)
+	entry := in["entry"]
+	if s.cfg.SecureMode {
+		entry = strings.ReplaceAll(entry, "\n", "\\n")
+		entry = strings.ReplaceAll(entry, "\r", "\\r")
+	}
+	s.mu.Lock()
+	s.aiLogs = append(s.aiLogs, entry)
+	count := len(s.aiLogs)
+	s.mu.Unlock()
+	respond(w, http.StatusOK, map[string]any{"stored": true, "entries": count, "entry": entry})
+}
+
+func (s *state) aiChain(w http.ResponseWriter, r *http.Request) {
+	var in map[string]string
+	_ = json.NewDecoder(r.Body).Decode(&in)
+	targetUser := in["target_user_id"]
+	if targetUser == "" {
+		targetUser = "1"
+	}
+	steps := []map[string]any{
+		{"step": "users_bola", "endpoint": "/users/" + targetUser, "result": "ok"},
+		{"step": "admin_promote", "endpoint": "/admin/promote?user_id=" + targetUser, "result": "ok"},
+		{"step": "billing_export", "endpoint": "/billing/export?format=json", "result": "ok"},
+		{"step": "ai_query", "endpoint": "/ai/query", "result": "ok"},
+	}
+	if s.cfg.SecureMode {
+		steps[0]["result"] = "blocked"
+		steps[1]["result"] = "blocked"
+		steps[2]["result"] = "blocked"
+		steps[3]["result"] = "constrained"
+	}
+	respond(w, http.StatusOK, map[string]any{
+		"chain":       "users -> admin -> billing -> ai",
+		"secure_mode": s.cfg.SecureMode,
+		"steps":       steps,
+	})
 }
 
 func withLogging(next http.Handler) http.Handler {
