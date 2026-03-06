@@ -1,19 +1,25 @@
 # Dev Log 11 - Sprint 9 Automation and Scoring
 
 ## Development tasks ✅
-- Added attack scripts, automation harness, benchmark-ready script structure, OIDC attack scenarios, and chain coverage.
+- Expanded full-chain script to emit structured stage JSON output.
+- Improved scoring engine to calculate per-stage benchmark flags and partial/completed status.
+- Extended automation harness to run full chain + OIDC misuse and produce output artifacts.
+- Expanded OIDC misuse script to cover authorize, token, and userinfo behavior across vulnerable vs secure modes.
 
 ## Dev testing tasks 🧪
-- Verified script reproducibility from clean lab startup.
+- Validated shell syntax and end-to-end script reproducibility for chain and scoring outputs.
 
 ## QA tasks 🧪
-- Executed full chain scenario script and OIDC misuse script.
+- Added runbook checks for automation harness, benchmark output, OIDC misuse, and full chain JSON output.
 
 ## Documentation tasks 📘
-- Added ATTACK_PLAYBOOK and scoring/OIDC flow documentation.
+- Expanded attack playbook, scoring methodology, and OIDC flow documentation with reproducible commands.
 
 ## User Guide updates 📖
-- Added automation and benchmark usage guidance with OAuth lab steps.
+- Added automation harness usage, benchmark examples, and OIDC exploitation walkthroughs.
 
 ## Commit messages 💾
-- feat(attacks): add chain scenarios\n- docs(attacks): add playbook\n- feat(oidc): add vulnerable oauth lab\n- docs(oidc): document oauth chains
+- feat(attacks): add chain scenarios
+- docs(attacks): add playbook
+- feat(oidc): add vulnerable oauth lab
+- docs(oidc): document oauth chains

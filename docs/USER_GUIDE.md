@@ -225,7 +225,32 @@ curl -s -X POST http://localhost:18080/ai/chain/run \
   -d '{"target_user_id":"2"}'
 ```
 
-## 12. Frontend Walkthrough: Dual UI Model (Sprint 4.2)
+## 12. Automation, Scoring, and OIDC Walkthrough (Sprint 9)
+Run full automation harness:
+```bash
+attack-scenarios/chains/automation_harness.sh http://localhost:18080 \
+  /tmp/vaporlab_chain_output.json \
+  /tmp/vaporlab_benchmark.json \
+  /tmp/vaporlab_oidc_output.txt
+```
+
+Inspect benchmark:
+```bash
+cat /tmp/vaporlab_benchmark.json
+```
+
+Run OIDC misuse scenario only:
+```bash
+attack-scenarios/oidc/oauth_misuse.sh http://localhost:18080
+```
+
+Run full chain and score manually:
+```bash
+attack-scenarios/chains/full_chain.sh http://localhost:18080 /tmp/vaporlab_chain_output.json
+scripts/score_attack.sh /tmp/vaporlab_chain_output.json /tmp/vaporlab_benchmark.json
+```
+
+## 13. Frontend Walkthrough: Dual UI Model (Sprint 4.2)
 1. Open `http://localhost:15100/workspace` to access the fake SaaS target app.
 2. Verify SaaS modules:
    - Sidebar navigation
@@ -247,7 +272,7 @@ curl -s -X POST http://localhost:18080/ai/chain/run \
    - Workspace UI remains corporate SaaS style
    - Switching lab mode changes backend behavior, not workspace branding
 
-## 13. Frontend API Workflow Checks (Current Endpoint Coverage)
+## 14. Frontend API Workflow Checks (Current Endpoint Coverage)
 1. Workspace member lookup:
    - Open `/workspace`, use `Team Access Workflow`, query user `2`.
 2. Billing workflow:
@@ -261,12 +286,12 @@ curl -s -X POST http://localhost:18080/ai/chain/run \
 6. Operator hardening:
    - Open `/operator`, click `Harden API` then return to workspace and repeat checks to observe protected responses.
 
-## 14. QA Smoke Script
+## 15. QA Smoke Script
 ```bash
 bash scripts/qa_tests.sh http://localhost:18080
 ```
 
-## 15. Environment Port Sets
+## 16. Environment Port Sets
 - Dev: frontend `15100`, api `18080`
 - QA: frontend `25100`, api `28080`
 - Prod: frontend `35100`, api `38080`

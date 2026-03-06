@@ -495,28 +495,28 @@ Provide a dedicated frontend AI exploitation cockpit after AI endpoints are impl
 # 🔗 PHASE 5 – EXPLOIT FRAMEWORK & OIDC
 ## 🚀 Sprint 9 – Automation & Scoring
 ### ✅ Development
-- [ ] Add attack scripts
-- [ ] Add scoring engine
-- [ ] Add benchmark output
-- [ ] Add automation harness
-- [ ] Add OIDC/OAuth attack scenarios
-- [ ] Implement full chain scenarios
+- [x] Add attack scripts
+- [x] Add scoring engine
+- [x] Add benchmark output
+- [x] Add automation harness
+- [x] Add OIDC/OAuth attack scenarios
+- [x] Implement full chain scenarios
 
 ### 📘 Documentation
-- [ ] Add `ATTACK_PLAYBOOK.md`
-- [ ] Add scoring methodology doc
-- [ ] Document OIDC/OAuth attack flows
+- [x] Add `ATTACK_PLAYBOOK.md`
+- [x] Add scoring methodology doc
+- [x] Document OIDC/OAuth attack flows
 
 ### 📖 User Guide
-- [ ] Add automation usage guide
-- [ ] Add benchmark example
-- [ ] Add OIDC exploitation lab guide
+- [x] Add automation usage guide
+- [x] Add benchmark example
+- [x] Add OIDC exploitation lab guide
 
 ### 💾 Commits
-- [ ] `feat(attacks): add chain scenarios`
-- [ ] `docs(attacks): add playbook`
-- [ ] `feat(oidc): add vulnerable oauth lab`
-- [ ] `docs(oidc): document oauth chains`
+- [x] `feat(attacks): add chain scenarios`
+- [x] `docs(attacks): add playbook`
+- [x] `feat(oidc): add vulnerable oauth lab`
+- [x] `docs(oidc): document oauth chains`
 
 ---
 

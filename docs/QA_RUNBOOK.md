@@ -44,3 +44,7 @@ This runbook tracks reproducible validation per sprint. Update status after each
 | 8 | Token limit comparison | `GET /ai/config` in vulnerable and secure mode | Vulnerable returns `token_limit=0`; secure returns constrained limit | ready to execute |
 | 8 | AI log injection | `POST /ai/logs/ingest` with newline payload | Vulnerable stores unsanitized style entry; secure escapes control chars | ready to execute |
 | 8 | Cross-service AI chain | `POST /ai/chain/run` with target user id | Vulnerable mode reports chain success; secure mode reports blocked steps | ready to execute |
+| 9 | Automation harness execution | Run `attack-scenarios/chains/automation_harness.sh` with default outputs | Produces chain JSON, benchmark JSON, and OIDC transcript files | ready to execute |
+| 9 | Benchmark output validation | Run `scripts/score_attack.sh` against chain output | Score and per-stage benchmark fields are present in JSON | ready to execute |
+| 9 | OIDC misuse scenario | Run `attack-scenarios/oidc/oauth_misuse.sh` in vulnerable then secure mode | Insecure redirect accepted in vulnerable mode, restricted in secure mode | ready to execute |
+| 9 | Full chain scenario script | Run `attack-scenarios/chains/full_chain.sh` | Stage results and chain response are returned in JSON | ready to execute |
