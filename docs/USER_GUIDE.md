@@ -350,7 +350,7 @@ curl -sf http://localhost:35100/api/readyz
 bash scripts/frontend_regression.sh http://localhost:35100
 ```
 
-## 20. Release Engineering Drill (Sprint 12)
+## 19. Release Engineering Drill (Sprint 12)
 Build backend image and generate SBOM locally:
 ```bash
 docker build -t vaporlab-api:local .
@@ -366,7 +366,13 @@ Trigger release workflow in GitHub Actions:
    - cosign signing step completed
    - GitHub release published with SBOM attachment
 
-## 19. Secure Mode Deployment and Defensive Configuration (Sprint 11)
+Sprint 12 QA execution helpers:
+```bash
+scripts/load_test.sh http://localhost:38080 500 25 /ai/query
+scripts/stability_soak.sh http://localhost:38080 60 30 /tmp/vaporlab_stability_soak.log
+```
+
+## 20. Secure Mode Deployment and Defensive Configuration (Sprint 11)
 Production-leaning hardening profile:
 ```bash
 export SECURE_MODE=true

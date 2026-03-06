@@ -36,3 +36,17 @@ CI generation:
 - Liveness: `GET /healthz`
 - Readiness: `GET /readyz`
 - Compose API healthcheck validates both endpoints in all environments.
+
+## Load and Stability Validation
+Use the packaged QA helpers:
+
+```bash
+scripts/load_test.sh http://localhost:38080 500 25 /ai/query
+scripts/stability_soak.sh http://localhost:38080 60 30 /tmp/vaporlab_stability_soak.log
+```
+
+Makefile shortcuts:
+```bash
+make load-test
+make soak-test
+```

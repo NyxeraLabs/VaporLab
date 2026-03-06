@@ -6,6 +6,9 @@
 - Added SBOM generation script (`scripts/generate_sbom.sh`) supporting `syft` or `docker sbom`.
 - Added release workflow (`.github/workflows/release-engineering.yml`) for image build/push, SBOM artifact generation, cosign keyless signing, and GitHub release publishing.
 - Added `.dockerignore` to reduce build context and improve image build performance.
+- Added QA automation scripts for Sprint 12 validation:
+  - `scripts/load_test.sh`
+  - `scripts/stability_soak.sh`
 
 ## Dev testing tasks 🧪
 - Validated compose configuration for dev/qa/prod after probe and env updates.
@@ -13,6 +16,7 @@
 
 ## QA tasks 🧪
 - Extended runbook with Sprint 12 checks for probe validation, SBOM generation, release/signing workflow smoke, and stability/load baselines.
+- Added Makefile shortcuts (`make load-test`, `make soak-test`) for reproducible QA execution.
 
 ## Documentation tasks 📘
 - Expanded release engineering manual with workflow inputs, outputs, signing flow, and SBOM handling.
