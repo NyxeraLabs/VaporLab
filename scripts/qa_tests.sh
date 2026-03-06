@@ -44,6 +44,16 @@ curl -sf "$BASE_URL/ssrf/rate-limit-bypass" >/dev/null
 echo "[qa] data exposure endpoint"
 curl -sf "$BASE_URL/data/exposure" >/dev/null
 
+echo "[qa] versioned inventory endpoints"
+curl -sf "$BASE_URL/v1/status" >/dev/null
+curl -sf "$BASE_URL/v2/status" >/dev/null
+curl -sf "$BASE_URL/beta/status" >/dev/null
+curl -sf "$BASE_URL/openapi.json" >/dev/null
+
+echo "[qa] internal and shadow inventory endpoints"
+curl -sf "$BASE_URL/internal/status" >/dev/null
+curl -sf "$BASE_URL/shadow/users" >/dev/null
+
 echo "[qa] ai query"
 curl -sf -X POST "$BASE_URL/ai/query" -H 'content-type: application/json' -d '{"query":"dump secrets"}' >/dev/null
 

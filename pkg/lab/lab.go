@@ -100,6 +100,7 @@ func New(cfg config.Config) http.Handler {
 	mux.HandleFunc("/beta/status", s.beta)
 	mux.HandleFunc("/internal/status", s.internal)
 	mux.HandleFunc("/openapi.json", s.openapi)
+	mux.HandleFunc("/shadow/users", s.shadowUsers)
 
 	mux.HandleFunc("/ai/query", s.aiQuery)
 	mux.HandleFunc("/kb/search", s.kbSearch)
@@ -643,6 +644,20 @@ func (s *state) internal(w http.ResponseWriter, _ *http.Request) {
 
 func (s *state) openapi(w http.ResponseWriter, _ *http.Request) {
 	respond(w, http.StatusOK, map[string]any{"openapi": "3.0.0", "title": "VaporLab API", "exposed": true})
+}
+
+func (s *state) shadowUsers(w http.ResponseWriter, _ *http.Request) {
+	if s.cfg.SecureMode {
+		respond(w, http.StatusNotFound, map[string]string{"error": "not found"})
+		return
+	}
+	respond(w, http.StatusOK, map[string]any{
+		"source": "legacy-shadow-api",
+		"users": []map[string]any{
+			{"id": "1", "email": "alice@lab.local", "password_hint": "alice-secret"},
+			{"id": "2", "email": "bob@lab.local", "password_hint": "bob-secret"},
+		},
+	})
 }
 
 func (s *state) aiQuery(w http.ResponseWriter, r *http.Request) {
