@@ -25,3 +25,10 @@ Outputs:
 - `/tmp/vaporlab_chain_output.json`: stage-by-stage chain results
 - `/tmp/vaporlab_benchmark.json`: benchmark score output
 - `/tmp/vaporlab_oidc_output.txt`: OIDC/OAuth misuse transcript
+
+## Frontend Execution Option
+From `/workspace`:
+1. Open `Automation and Scoring Dashboard`.
+2. Click `Run Automation`.
+3. Review score cards and run-history table.
+4. Use OIDC visualizer string to compare authorize/token/userinfo outcomes by mode.

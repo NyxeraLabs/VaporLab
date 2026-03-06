@@ -45,6 +45,11 @@ Frontend is dockerized and included in:
 - `docker-compose.dev.yml`
 - `docker-compose.qa.yml`
 - `docker-compose.prod.yml`
+- Health/readiness endpoints:
+  - `/api/healthz`
+  - `/api/readyz`
+- Production image uses standalone Next.js bundle and non-root runtime user.
+- Release packaging workflow: `.github/workflows/frontend-release.yml`
 
 ## Access
 - Dev:
@@ -63,12 +68,34 @@ Frontend is dockerized and included in:
 - No direct hex color usage in component/layout files.
 - Shared tokens must come from `themes/core.ts`.
 
+## Operations References
+- [Frontend Operations Manual](frontend-operations.md)
+- [Frontend Production Runbook](../FRONTEND_PROD_RUNBOOK.md)
+
 ## Current Phase UI Coverage
 - Phase 2:
   - Admin/Billing attack-chain workflows represented through workspace actions and operator control context.
 - Phase 3:
   - SSRF/resource misuse and inventory discovery surfaced in workspace request panels.
+  - Frontend-driven OWASP 2023 checks include SSRF fetch probes, GraphQL depth probes, and inventory route probes.
 - Phase 4:
   - AI query + RAG probe controls exposed in workspace UI and operator chain status.
+  - Extended misuse flow includes AI chain execution and prompt/config abuse checks.
+- Phase 5:
+  - Automation dashboard in workspace:
+    - one-click chain runner
+    - benchmark score cards (latest/average/best)
+    - OIDC/OAuth exploit flow visualizer
+- Phase 6:
+  - Operator observability dashboard:
+    - metrics and trace summary panel
+    - blind-spot and missing-telemetry indicators
+    - incident timeline widget backed by `/telemetry/events`
 - Phase 7 (baseline):
   - Secure/hardened mode toggling available from operator controls.
+  - Vulnerable vs secure UI matrix rendered in operator console.
+
+## Frontend Module Notes
+- Automation runner and score cards are client-orchestrated and intended for lab training visibility.
+- Telemetry panels depend on `/metrics` and `/telemetry/events`; blind-spot conditions are expected in vulnerable mode.
+- OIDC visualizer is status-oriented and intentionally does not store real tokens in UI state.

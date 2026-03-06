@@ -399,15 +399,15 @@ Add frontend views for OWASP 2023 discovery and resource abuse surfaces after AP
 
 ### 📘 Documentation
 - [x] Document phase 3 frontend modules and data flows
-- [ ] Update manuals with frontend-driven OWASP 2023 labs
+- [x] Update manuals with frontend-driven OWASP 2023 labs
 
 ### 📖 User Guide
 - [x] Add frontend lab walkthrough for SSRF and inventory discovery
-- [ ] Add frontend DoS walkthrough extensions
+- [x] Add frontend DoS walkthrough extensions
 
 ### 💾 Commits
 - [x] `feat(frontend): add owasp-2023 discovery and resource checks`
-- [ ] `docs(frontend): document phase 3 exploit views`
+- [x] `docs(frontend): document phase 3 exploit views`
 
 ---
 
@@ -480,15 +480,15 @@ Provide a dedicated frontend AI exploitation cockpit after AI endpoints are impl
 
 ### 📘 Documentation
 - [x] Document AI cockpit architecture and usage baseline
-- [ ] Update threat model docs with frontend attack paths
+- [x] Update threat model docs with frontend attack paths
 
 ### 📖 User Guide
 - [x] Add frontend AI lab baseline exercises
-- [ ] Add extended misuse scenario walkthroughs
+- [x] Add extended misuse scenario walkthroughs
 
 ### 💾 Commits
 - [x] `feat(frontend): add ai workspace and operator integration modules`
-- [ ] `docs(frontend): document phase 4 ai console`
+- [x] `docs(frontend): document phase 4 ai console`
 
 ---
 
@@ -525,24 +525,24 @@ Provide a dedicated frontend AI exploitation cockpit after AI endpoints are impl
 Expose attack automation and scoring controls in the frontend after framework APIs are ready.
 
 ### ✅ Development
-- [ ] Add one-click automation runner from frontend
-- [ ] Add score/benchmark dashboard and trend cards
-- [ ] Add OIDC/OAuth exploit flow visualizer
+- [x] Add one-click automation runner from frontend
+- [x] Add score/benchmark dashboard and trend cards
+- [x] Add OIDC/OAuth exploit flow visualizer
 
 ### 🧪 Dev Testing
-- [ ] Validate automation trigger and result rendering
-- [ ] Validate scoring output consistency in frontend
+- [x] Validate automation trigger and result rendering
+- [x] Validate scoring output consistency in frontend
 
 ### 📘 Documentation
-- [ ] Document frontend automation/scoring modules
-- [ ] Update attack playbook with frontend execution option
+- [x] Document frontend automation/scoring modules
+- [x] Update attack playbook with frontend execution option
 
 ### 📖 User Guide
-- [ ] Add frontend automation and scoring tutorial
+- [x] Add frontend automation and scoring tutorial
 
 ### 💾 Commits
-- [ ] `feat(frontend): add attack automation dashboard`
-- [ ] `docs(frontend): document phase 5 automation ui`
+- [x] `feat(frontend): add attack automation dashboard`
+- [x] `docs(frontend): document phase 5 automation ui`
 
 ---
 
@@ -573,24 +573,24 @@ Expose attack automation and scoring controls in the frontend after framework AP
 Add observability and blind-spot visibility panels to the frontend console after telemetry APIs are ready.
 
 ### ✅ Development
-- [ ] Add metrics/trace summary panels in frontend
-- [ ] Add blind-spot indicators and missing-telemetry flags
-- [ ] Add incident timeline widget from logged attack events
+- [x] Add metrics/trace summary panels in frontend
+- [x] Add blind-spot indicators and missing-telemetry flags
+- [x] Add incident timeline widget from logged attack events
 
 ### 🧪 Dev Testing
-- [ ] Validate metrics and trace rendering from live endpoints
-- [ ] Validate blind-spot indicators under expected gaps
+- [x] Validate metrics and trace rendering from live endpoints
+- [x] Validate blind-spot indicators under expected gaps
 
 ### 📘 Documentation
-- [ ] Document observability frontend modules and limitations
-- [ ] Update architecture with telemetry UI components
+- [x] Document observability frontend modules and limitations
+- [x] Update architecture with telemetry UI components
 
 ### 📖 User Guide
-- [ ] Add frontend blue-team validation walkthrough
+- [x] Add frontend blue-team validation walkthrough
 
 ### 💾 Commits
-- [ ] `feat(frontend): add observability dashboard`
-- [ ] `docs(frontend): document phase 6 telemetry ui`
+- [x] `feat(frontend): add observability dashboard`
+- [x] `docs(frontend): document phase 6 telemetry ui`
 
 ---
 
@@ -634,14 +634,14 @@ Add secure mode controls and vulnerable-vs-secure comparison UX to the frontend.
 
 ### 📘 Documentation
 - [x] Document frontend secure mode controls
-- [ ] Add UI comparison matrix for vulnerable vs secure behaviors
+- [x] Add UI comparison matrix for vulnerable vs secure behaviors
 
 ### 📖 User Guide
 - [x] Add secure mode frontend walkthrough baseline for defenders
 
 ### 💾 Commits
 - [x] `feat(frontend): add secure mode control center`
-- [ ] `docs(frontend): document phase 7 secure ui`
+- [x] `docs(frontend): document phase 7 secure ui`
 
 ---
 
@@ -689,26 +689,26 @@ Add secure mode controls and vulnerable-vs-secure comparison UX to the frontend.
 Finalize production-grade frontend packaging, hardening, and release workflow.
 
 ### ✅ Development
-- [ ] Optimize frontend image layers and caching
-- [ ] Add frontend health/readiness checks
-- [ ] Add frontend production deployment profile
-- [ ] Add release artifact generation for frontend bundle
+- [x] Optimize frontend image layers and caching
+- [x] Add frontend health/readiness checks
+- [x] Add frontend production deployment profile
+- [x] Add release artifact generation for frontend bundle
 
 ### 🧪 QA
-- [ ] Frontend stability test under long-running sessions
-- [ ] Frontend regression coverage for all sprint modules
+- [x] Frontend stability test under long-running sessions
+- [x] Frontend regression coverage for all sprint modules
 
 ### 📘 Documentation
-- [ ] Finalize frontend operations manual
-- [ ] Add frontend production runbook and rollback plan
+- [x] Finalize frontend operations manual
+- [x] Add frontend production runbook and rollback plan
 
 ### 📖 User Guide
-- [ ] Add production frontend usage guide for red/blue teams
+- [x] Add production frontend usage guide for red/blue teams
 
 ### 💾 Commits
-- [ ] `chore(frontend): harden production image and probes`
-- [ ] `ci(frontend): add release packaging workflow`
-- [ ] `docs(frontend): finalize production manuals`
+- [x] `chore(frontend): harden production image and probes`
+- [x] `ci(frontend): add release packaging workflow`
+- [x] `docs(frontend): finalize production manuals`
 
 ---
 

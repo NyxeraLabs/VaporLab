@@ -52,3 +52,10 @@ This runbook tracks reproducible validation per sprint. Update status after each
 | 10 | Trace header baseline | `GET /healthz` and inspect `X-Trace-ID` | Trace header is present on non-blindspot routes | ready to execute |
 | 10 | Blind-spot route visibility gap | Call `/admin/debug` and `/ai/logs/ingest` then `/metrics` | Blindspot counter increments and trace headers are omitted on blindspot routes | ready to execute |
 | 10 | Path-level telemetry | Trigger multiple endpoints then inspect `/metrics` | `vaporlab_requests_by_path_total` includes path labels and counts | ready to execute |
+| 9.1 | Frontend automation trigger | In `/workspace`, click `Run Automation` in dashboard | One-click run executes and status summary updates | ready to execute |
+| 9.1 | Frontend score consistency | Run dashboard automation multiple times | Latest/average/best score cards update consistently with run history | ready to execute |
+| 9.1 | Frontend OIDC visualizer | Run OAuth check and automation dashboard | Visualized chain displays authorize/token/userinfo statuses | ready to execute |
+| 10.1 | Frontend observability render | In `/operator`, click `Refresh Telemetry` | Metrics summary and timeline populate from live endpoints | ready to execute |
+| 10.1 | Frontend blind-spot indicator | Trigger `/admin/debug` then refresh telemetry | Missing-telemetry/blindspot panel flags expected coverage gaps | ready to execute |
+| 12.1 | Frontend stability smoke | Run `scripts/frontend_regression.sh http://localhost:15100` repeatedly during long session | Health/workspace/operator endpoints remain reachable | ready to execute |
+| 12.1 | Frontend module regression | Run `bash scripts/qa_tests.sh http://localhost:18080 http://localhost:15100` | Frontend automation and observability checks pass with backend flows | ready to execute |

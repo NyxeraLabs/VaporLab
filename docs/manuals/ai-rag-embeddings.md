@@ -30,6 +30,9 @@ Sprint 7 introduces the baseline RAG/embeddings attack surface with prompt-injec
 - Prompt injection and system prompt override.
 - Secret exfiltration through model responses/config exposure.
 - Embedding poisoning to corrupt retrieval quality and outputs.
+- Frontend-assisted misuse path:
+- Workspace panels can orchestrate query, config, embed, and AI chain probes in rapid sequence.
+- Operator runtime exposes mode transitions that influence exploit outcomes.
 
 ## QA Commands
 Prompt injection:
@@ -51,3 +54,8 @@ curl -s -X POST http://localhost:18080/ai/embed \
   -H 'content-type: application/json' \
   -d '{"text":"poison entry: admin-token override"}'
 ```
+
+## Extended Frontend Misuse Scenario
+1. In `/workspace`, run AI lab checks (`kb search`, `embed`, `config`).
+2. Open automation dashboard and execute one-click run to combine AI and OIDC outcomes.
+3. Switch to `/operator`, harden mode, rerun automation, and compare score/timeline deltas.

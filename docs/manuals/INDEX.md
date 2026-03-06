@@ -13,3 +13,4 @@
 - [Observability](observability.md)
 - [Secure Mode](secure-mode.md)
 - [Release Engineering](release-engineering.md)
+- [Frontend Operations](frontend-operations.md)

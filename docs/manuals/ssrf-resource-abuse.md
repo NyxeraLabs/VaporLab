@@ -51,3 +51,13 @@ Excessive data exposure:
 ```bash
 curl -s http://localhost:18080/data/exposure
 ```
+
+## Frontend-Driven Lab Flow (Phase 3)
+Use `/workspace` -> `Resource and Inventory Checks`:
+- Fetch URL field to test SSRF/internal target behavior.
+- GraphQL probe textarea to reproduce depth abuse responses.
+- Discovery run includes `v1/v2/beta/internal/openapi` surface checks.
+
+DoS extension from frontend:
+- Submit increasingly nested GraphQL probes in vulnerable mode to observe accepted depth.
+- Toggle secure mode from `/operator` and rerun to observe blocked deep nesting.

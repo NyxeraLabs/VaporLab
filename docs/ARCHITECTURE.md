@@ -17,6 +17,11 @@ VaporLab is a monorepo with a Go API backend and a Next.js frontend containing t
   - Uses `OperatorLayout` and operator theme tokens
   - Live control/probe endpoints:
     - `/auth/mode`, `/healthz`, `/auth/config`, `/admin/tenant`, `/chain/run`
+    - `/metrics`, `/telemetry/events`
+  - Frontend observability modules:
+    - metrics/trace summary panel
+    - blind-spot indicator panel
+    - incident timeline widget
 - Fake SaaS Target Application (`/workspace/*`)
   - Realistic enterprise workspace experience (Jira/Linear-style)
   - Uses `SaaSLayout` and saas theme tokens
@@ -27,6 +32,11 @@ VaporLab is a monorepo with a Go API backend and a Next.js frontend containing t
     - `/ssrf/fetch`, `/graphql`
     - `/v1/status`, `/v2/status`, `/beta/status`, `/internal/status`, `/openapi.json`
     - `/ai/query`, `/kb/search`, `/ai/embed`, `/ai/config`
+    - `/ai/chain/run`, `/oidc/token`
+  - Frontend exploitation modules:
+    - one-click automation runner
+    - score/benchmark trend cards
+    - OIDC/OAuth flow visualizer
 
 ## Theme and Design System
 - Shared core tokens: `frontend/themes/core.ts`
@@ -40,6 +50,7 @@ VaporLab is a monorepo with a Go API backend and a Next.js frontend containing t
 2. Frontend calls API endpoints via `NEXT_PUBLIC_API_BASE`.
 3. API handlers implement auth, users, billing, admin, SSRF, versioning, and AI surfaces.
 4. Metrics exposed on `/metrics`; trace IDs returned in `X-Trace-ID` headers.
+5. Event timeline exposed on `/telemetry/events` for operator incident analysis.
 
 ## Security Modes
 - Vulnerable mode defaults to insecure logic for exploitation labs.

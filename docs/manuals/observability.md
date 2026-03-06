@@ -34,3 +34,13 @@ curl -i http://localhost:18080/admin/debug
 curl -s -X POST http://localhost:18080/ai/logs/ingest -H 'content-type: application/json' -d '{"entry":"ok\nforged=true"}'
 curl -s http://localhost:18080/metrics
 ```
+
+## Frontend Modules and Limitations
+- Operator dashboard includes:
+- Metrics summary panel (request/trace/blindspot counters)
+- Missing-telemetry indicator panel
+- Incident timeline fed by `/telemetry/events`
+
+Limitations:
+- Timeline reflects in-process event memory and is not durable storage.
+- Blind-spot indicators are expected to trigger in vulnerable mode by design.

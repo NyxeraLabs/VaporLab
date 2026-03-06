@@ -309,6 +309,17 @@ Blue-team quick validation:
    - Use `AI / RAG Lab Controls` and run KB search + embed + config probe.
 6. Operator hardening:
    - Open `/operator`, click `Harden API` then return to workspace and repeat checks to observe protected responses.
+7. Frontend automation/scoring:
+   - In `/workspace`, open `Automation and Scoring Dashboard`, click `Run Automation`, and review score cards + run history.
+8. Frontend OIDC flow visualizer:
+   - Use `OAuth Connection Check` and automation panel, then compare `Authorize -> Token -> UserInfo` status chain.
+9. Frontend observability:
+   - In `/operator`, click `Refresh Telemetry` and review:
+   - Observability summary panel
+   - Missing-telemetry flags
+   - Incident timeline from `/telemetry/events`
+10. Extended AI misuse walkthrough:
+   - Run AI lab controls in `/workspace`, then run automation dashboard, then harden mode in `/operator` and rerun for score delta comparison.
 
 ## 16. QA Smoke Script
 ```bash
@@ -319,3 +330,22 @@ bash scripts/qa_tests.sh http://localhost:18080
 - Dev: frontend `15100`, api `18080`
 - QA: frontend `25100`, api `28080`
 - Prod: frontend `35100`, api `38080`
+
+## 18. Production Frontend Usage (Red/Blue Teams)
+Red-team operator flow:
+1. Open `http://localhost:35100/workspace`.
+2. Run automation dashboard and capture score/flow output.
+3. Correlate with API chain outputs from attack harness.
+
+Blue-team operator flow:
+1. Open `http://localhost:35100/operator`.
+2. Enable hardened mode.
+3. Refresh telemetry and verify blind-spot indicators and incident timeline.
+4. Validate secure-vs-vulnerable matrix states during mode changes.
+
+Production sanity checks:
+```bash
+curl -sf http://localhost:35100/api/healthz
+curl -sf http://localhost:35100/api/readyz
+bash scripts/frontend_regression.sh http://localhost:35100
+```

@@ -12,3 +12,8 @@ VaporLab intentionally models two behaviors:
 - OIDC/OAuth misuse chains
 - AI/ML prompt injection and vector poisoning
 - Business logic abuse and chained exploitation
+
+## Frontend Attack Paths
+- Workspace dashboard can execute chained misuse probes across users, billing, OIDC, SSRF, inventory, and AI endpoints.
+- Automation dashboard provides one-click exploit sequence execution with score trend visibility.
+- Operator dashboard surfaces hardening controls, telemetry blind-spot indicators, and incident timeline views for defender validation.
