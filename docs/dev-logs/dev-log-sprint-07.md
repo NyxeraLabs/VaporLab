@@ -1,19 +1,29 @@
 # Dev Log 07 - Sprint 5 SSRF and Resource Abuse
 
 ## Development tasks ✅
-- Added file upload endpoint, deep nesting GraphQL behavior, URL fetch SSRF endpoint, internal access behavior, rate-limit bypass, and high-exposure responses.
+- Added SSRF fetch behavior with internal target allowance in vulnerable mode and internal target blocking in secure mode.
+- Added deep-nesting GraphQL behavior with secure depth guard.
+- Added unrestricted upload behavior for vulnerable mode and strict 2MB secure-mode limit.
+- Added sprint-specific rate-limit bypass endpoint and excessive data exposure endpoint.
 
 ## Dev testing tasks 🧪
-- Evaluated SSRF metadata targeting and deep query load behavior.
+- Added automated tests for:
+- SSRF metadata/internal targeting behavior by mode.
+- Deep GraphQL nesting acceptance/rejection by mode.
+- Rate-limit bypass behavior by mode.
+- Excessive data exposure behavior by mode.
+- Upload size enforcement behavior by mode.
 
 ## QA tasks 🧪
-- Ran metadata SSRF, deep nesting DoS, and rate-limit bypass verification.
+- Added runbook and script coverage for metadata SSRF, deep nesting DoS behavior, upload abuse checks, and rate-limit bypass verification.
 
 ## Documentation tasks 📘
-- Documented SSRF attack surface, resource exhaustion paths, and 2023 API Top 10 mapping.
+- Expanded SSRF/resource abuse manual with endpoint matrix, secure-mode controls, OWASP 2023 mapping, and reproducible commands.
 
 ## User Guide updates 📖
-- Added SSRF walkthrough and DoS exercises.
+- Added operator walkthrough for SSRF, GraphQL abuse, resource bypass, and secure-mode comparison commands.
 
 ## Commit messages 💾
-- feat(ssrf): add vulnerable fetch endpoint\n- feat(graphql): enable deep nesting\n- docs(ssrf): document attack surface
+- feat(ssrf): add vulnerable fetch endpoint
+- feat(graphql): enable deep nesting
+- docs(ssrf): document attack surface

@@ -102,7 +102,35 @@ curl -s -X POST http://localhost:18080/ai/query -H 'content-type: application/js
 curl -s http://localhost:18080/chain/run
 ```
 
-## 8. Frontend Walkthrough: Dual UI Model (Sprint 4.2)
+## 8. SSRF and Resource Abuse Walkthrough (Sprint 5)
+Internal SSRF in vulnerable mode:
+```bash
+curl -s "http://localhost:18080/ssrf/fetch?url=http://127.0.0.1:18080/healthz"
+```
+
+Deep GraphQL query demo:
+```bash
+curl -s -X POST http://localhost:18080/graphql \
+  -H 'content-type: application/json' \
+  -d '{"query":"query { a { b { c { d { e { f { g { h { i { j { k } } } } } } } } } } }"}'
+```
+
+Resource abuse and exposure endpoints:
+```bash
+curl -s http://localhost:18080/ssrf/rate-limit-bypass
+curl -s http://localhost:18080/data/exposure
+```
+
+Secure mode comparison:
+```bash
+curl -s -X POST http://localhost:18080/auth/mode \
+  -H 'content-type: application/json' \
+  -d '{"secure_mode":true}'
+curl -s "http://localhost:18080/ssrf/fetch?url=http://127.0.0.1:18080/healthz"
+curl -s http://localhost:18080/ssrf/rate-limit-bypass
+```
+
+## 9. Frontend Walkthrough: Dual UI Model (Sprint 4.2)
 1. Open `http://localhost:15100/workspace` to access the fake SaaS target app.
 2. Verify SaaS modules:
    - Sidebar navigation
@@ -124,7 +152,7 @@ curl -s http://localhost:18080/chain/run
    - Workspace UI remains corporate SaaS style
    - Switching lab mode changes backend behavior, not workspace branding
 
-## 9. Frontend API Workflow Checks (Current Endpoint Coverage)
+## 10. Frontend API Workflow Checks (Current Endpoint Coverage)
 1. Workspace member lookup:
    - Open `/workspace`, use `Team Access Workflow`, query user `2`.
 2. Billing workflow:
@@ -138,12 +166,12 @@ curl -s http://localhost:18080/chain/run
 6. Operator hardening:
    - Open `/operator`, click `Harden API` then return to workspace and repeat checks to observe protected responses.
 
-## 10. QA Smoke Script
+## 11. QA Smoke Script
 ```bash
 bash scripts/qa_tests.sh http://localhost:18080
 ```
 
-## 11. Environment Port Sets
+## 12. Environment Port Sets
 - Dev: frontend `15100`, api `18080`
 - QA: frontend `25100`, api `28080`
 - Prod: frontend `35100`, api `38080`

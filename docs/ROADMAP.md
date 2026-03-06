@@ -332,32 +332,32 @@ Introduce two isolated web interfaces: a protected Operator Dashboard and a real
 
 ## 🚀 Sprint 5 – SSRF & Resource Abuse
 ### ✅ Development
-- [ ] Add file upload (no size limit)
-- [ ] Add GraphQL deep nesting
-- [ ] Add URL fetch endpoint
-- [ ] Allow internal network access
-- [ ] Add rate limit bypass
-- [ ] Add excessive data exposure endpoint
+- [x] Add file upload (no size limit)
+- [x] Add GraphQL deep nesting
+- [x] Add URL fetch endpoint
+- [x] Allow internal network access
+- [x] Add rate limit bypass
+- [x] Add excessive data exposure endpoint
 
 ### 🧪 QA
-- [ ] Metadata SSRF test
-- [ ] Deep GraphQL DoS test
-- [ ] Rate limit bypass verification
+- [x] Metadata SSRF test
+- [x] Deep GraphQL DoS test
+- [x] Rate limit bypass verification
 
 ### 📘 Documentation
-- [ ] Document SSRF attack surface
-- [ ] Document resource exhaustion scenarios
-- [ ] Map to OWASP API Top 10 (2023)
+- [x] Document SSRF attack surface
+- [x] Document resource exhaustion scenarios
+- [x] Map to OWASP API Top 10 (2023)
 
 ### 📖 User Guide
-- [ ] Add SSRF walkthrough
-- [ ] Add DoS demonstration
-- [ ] Add API discovery exercises
+- [x] Add SSRF walkthrough
+- [x] Add DoS demonstration
+- [x] Add API discovery exercises
 
 ### 💾 Commits
-- [ ] `feat(ssrf): add vulnerable fetch endpoint`
-- [ ] `feat(graphql): enable deep nesting`
-- [ ] `docs(ssrf): document attack surface`
+- [x] `feat(ssrf): add vulnerable fetch endpoint`
+- [x] `feat(graphql): enable deep nesting`
+- [x] `docs(ssrf): document attack surface`
 
 ---
 

@@ -27,3 +27,8 @@ This runbook tracks reproducible validation per sprint. Update status after each
 | 4 | Admin header enforcement | POST `/admin/promote?user_id=1` without `X-Admin` in secure mode | Response returns `403` | ready to execute |
 | 4 | Debug route exposure | GET `/admin/debug` in vulnerable mode | Debug token/environment details are exposed | ready to execute |
 | 4 | Full chain validation | Execute BOLA -> promote -> export -> AI query -> `/chain/run` | Chain sequence completes and returns chain signal | ready to execute |
+| 5 | Metadata/internal SSRF | `GET /ssrf/fetch?url=http://127.0.0.1:18080/healthz` | Vulnerable mode fetches internal response; secure mode blocks with `403` | ready to execute |
+| 5 | Deep GraphQL DoS control | POST nested query to `/graphql` | Vulnerable mode accepts deep nesting; secure mode rejects depth overflow | ready to execute |
+| 5 | Upload resource abuse | Upload payload >2MB to `POST /upload` | Vulnerable mode accepts payload; secure mode returns `413` | ready to execute |
+| 5 | Sprint-5 rate-limit bypass | `GET /ssrf/rate-limit-bypass` | Vulnerable mode returns bypass granted; secure mode returns `429` | ready to execute |
+| 5 | Excessive data exposure | `GET /data/exposure` | Vulnerable mode leaks internal records/secrets; secure mode returns sanitized summary | ready to execute |
