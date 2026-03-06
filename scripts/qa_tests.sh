@@ -83,4 +83,10 @@ attack-scenarios/chains/automation_harness.sh "$BASE_URL" \
 test -s /tmp/vaporlab_chain_output.json
 test -s /tmp/vaporlab_benchmark.json
 
+echo "[qa] observability metrics and blindspots"
+curl -sf "$BASE_URL/healthz" >/dev/null
+curl -sf "$BASE_URL/admin/debug" >/dev/null || true
+curl -sf -X POST "$BASE_URL/ai/logs/ingest" -H 'content-type: application/json' -d '{"entry":"ok\nforged=true"}' >/dev/null
+curl -sf "$BASE_URL/metrics" | rg -q "vaporlab_blindspot_requests_total"
+
 echo "[qa] complete"

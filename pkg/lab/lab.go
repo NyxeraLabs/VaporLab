@@ -47,6 +47,10 @@ type state struct {
 	vectorStore   []string
 	aiTraining    []string
 	aiLogs        []string
+	requestCount  int
+	traceCount    int
+	blindspotHits int
+	pathCount     map[string]int
 	refreshTokens map[string]bool
 }
 
@@ -58,6 +62,7 @@ func New(cfg config.Config) http.Handler {
 		vectorStore:   []string{"internal runbook: reset-admin-token"},
 		aiTraining:    []string{},
 		aiLogs:        []string{},
+		pathCount:     map[string]int{},
 		refreshTokens: map[string]bool{},
 	}
 
@@ -112,7 +117,7 @@ func New(cfg config.Config) http.Handler {
 	mux.HandleFunc("/ai/logs/ingest", s.aiLogIngest)
 	mux.HandleFunc("/ai/chain/run", s.aiChain)
 
-	return withLogging(withTrace(mux))
+	return withObservability(s, mux)
 }
 
 func (s *state) health(w http.ResponseWriter, _ *http.Request) {
@@ -120,8 +125,24 @@ func (s *state) health(w http.ResponseWriter, _ *http.Request) {
 }
 
 func (s *state) metrics(w http.ResponseWriter, _ *http.Request) {
+	s.mu.Lock()
+	total := s.requestCount
+	traces := s.traceCount
+	blind := s.blindspotHits
+	perPath := make(map[string]int, len(s.pathCount))
+	for k, v := range s.pathCount {
+		perPath[k] = v
+	}
+	s.mu.Unlock()
+
 	w.Header().Set("Content-Type", "text/plain")
-	_, _ = w.Write([]byte("vaporlab_requests_total 1\n"))
+	_, _ = w.Write([]byte(fmt.Sprintf("vaporlab_requests_total %d\n", total)))
+	_, _ = w.Write([]byte(fmt.Sprintf("vaporlab_traces_total %d\n", traces)))
+	_, _ = w.Write([]byte(fmt.Sprintf("vaporlab_blindspot_requests_total %d\n", blind)))
+	for path, count := range perPath {
+		safePath := strings.ReplaceAll(path, `"`, `'`)
+		_, _ = w.Write([]byte(fmt.Sprintf("vaporlab_requests_by_path_total{path=\"%s\"} %d\n", safePath, count)))
+	}
 }
 
 func (s *state) issueJWT(w http.ResponseWriter, r *http.Request) {
@@ -769,21 +790,42 @@ func (s *state) aiChain(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func withLogging(next http.Handler) http.Handler {
+func withObservability(s *state, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if !strings.HasPrefix(r.URL.Path, "/admin/debug") {
-			log.Printf("method=%s path=%s remote=%s", r.Method, r.URL.Path, r.RemoteAddr)
+		blindspot := isBlindspotPath(r.URL.Path, s.cfg.SecureMode)
+
+		s.mu.Lock()
+		s.requestCount++
+		s.pathCount[r.URL.Path]++
+		if blindspot {
+			s.blindspotHits++
+		}
+		s.mu.Unlock()
+
+		traceID := ""
+		if !blindspot {
+			traceID = fmt.Sprintf("trace-%d", time.Now().UnixNano())
+			w.Header().Set("X-Trace-ID", traceID)
+			s.mu.Lock()
+			s.traceCount++
+			s.mu.Unlock()
+		}
+
+		if !blindspot {
+			log.Printf(`{"event":"http_request","method":"%s","path":"%s","remote":"%s","secure_mode":%t,"trace_id":"%s"}`, r.Method, r.URL.Path, r.RemoteAddr, s.cfg.SecureMode, traceID)
 		}
 		next.ServeHTTP(w, r)
 	})
 }
 
-func withTrace(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		traceID := fmt.Sprintf("trace-%d", time.Now().UnixNano())
-		w.Header().Set("X-Trace-ID", traceID)
-		next.ServeHTTP(w, r)
-	})
+func isBlindspotPath(path string, secureMode bool) bool {
+	if strings.HasPrefix(path, "/admin/debug") {
+		return true
+	}
+	if !secureMode && strings.HasPrefix(path, "/ai/logs/ingest") {
+		return true
+	}
+	return false
 }
 
 func respond(w http.ResponseWriter, code int, body any) {
