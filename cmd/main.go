@@ -16,7 +16,7 @@ func main() {
 	if p := os.Getenv("PORT"); p != "" {
 		addr = ":" + p
 	}
-	log.Printf("vaporlab starting on %s secure_mode=%v", addr, cfg.SecureMode)
+	log.Printf("vaporlab starting on %s secure_mode=%v hardening_enabled=%v", addr, cfg.SecureMode, !cfg.HardeningDisabled)
 	if err := http.ListenAndServe(addr, h); err != nil {
 		log.Fatal(err)
 	}

@@ -47,6 +47,14 @@ type telemetryEvent struct {
 	Blindspot bool   `json:"blindspot"`
 }
 
+type oidcCode struct {
+	ClientID    string
+	RedirectURI string
+	Subject     string
+	ExpiresAt   time.Time
+	Used        bool
+}
+
 type state struct {
 	mu            sync.Mutex
 	cfg           config.Config
@@ -61,6 +69,10 @@ type state struct {
 	pathCount     map[string]int
 	events        []telemetryEvent
 	refreshTokens map[string]bool
+	oidcCodes     map[string]oidcCode
+	oidcTokens    map[string]string
+	rateWindow    time.Time
+	rateCounters  map[string]int
 }
 
 func New(cfg config.Config) http.Handler {
@@ -73,6 +85,9 @@ func New(cfg config.Config) http.Handler {
 		aiLogs:        []string{},
 		pathCount:     map[string]int{},
 		refreshTokens: map[string]bool{},
+		oidcCodes:     map[string]oidcCode{},
+		oidcTokens:    map[string]string{},
+		rateCounters:  map[string]int{},
 	}
 
 	s.users["1"] = user{ID: "1", TenantID: "tenant-a", Email: "alice@lab.local", Role: "user", Internal: "debug=true", Password: "alice-secret"}
@@ -131,7 +146,16 @@ func New(cfg config.Config) http.Handler {
 }
 
 func (s *state) health(w http.ResponseWriter, _ *http.Request) {
-	respond(w, http.StatusOK, map[string]any{"status": "ok", "secure_mode": s.cfg.SecureMode})
+	respond(w, http.StatusOK, map[string]any{
+		"status":                "ok",
+		"secure_mode":           s.cfg.SecureMode,
+		"hardening_enabled":     !s.cfg.HardeningDisabled,
+		"effective_secure_mode": s.secureModeEffective(),
+	})
+}
+
+func (s *state) secureModeEffective() bool {
+	return s.cfg.SecureMode && !s.cfg.HardeningDisabled
 }
 
 func (s *state) metrics(w http.ResponseWriter, _ *http.Request) {
@@ -192,7 +216,7 @@ func (s *state) issueJWT(w http.ResponseWriter, r *http.Request) {
 	if alg == "" {
 		alg = "HS256"
 	}
-	token, err := issueJWTToken(uid, "user", s.cfg.WeakJWTKey, time.Now().UTC(), alg, s.cfg.SecureMode)
+	token, err := issueJWTToken(uid, "user", s.cfg.WeakJWTKey, time.Now().UTC(), alg, s.secureModeEffective())
 	if err != nil {
 		respond(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
 		return
@@ -296,20 +320,27 @@ func (s *state) validateJWT(w http.ResponseWriter, r *http.Request) {
 		respond(w, http.StatusBadRequest, map[string]string{"error": "missing token"})
 		return
 	}
-	payload, err := validateJWTToken(token, s.cfg.WeakJWTKey, s.cfg.SecureMode)
+	payload, err := validateJWTToken(token, s.cfg.WeakJWTKey, s.secureModeEffective())
 	if err != nil {
 		respond(w, http.StatusUnauthorized, map[string]string{"error": err.Error()})
 		return
 	}
-	respond(w, http.StatusOK, map[string]any{"valid": true, "payload": payload, "secure_mode": s.cfg.SecureMode})
+	respond(w, http.StatusOK, map[string]any{
+		"valid":                 true,
+		"payload":               payload,
+		"secure_mode":           s.cfg.SecureMode,
+		"effective_secure_mode": s.secureModeEffective(),
+	})
 }
 
 func (s *state) authConfig(w http.ResponseWriter, _ *http.Request) {
 	resp := map[string]any{
-		"secure_mode": s.cfg.SecureMode,
-		"weak_secret": isWeakSecret(s.cfg.WeakJWTKey),
+		"secure_mode":           s.cfg.SecureMode,
+		"hardening_enabled":     !s.cfg.HardeningDisabled,
+		"effective_secure_mode": s.secureModeEffective(),
+		"weak_secret":           isWeakSecret(s.cfg.WeakJWTKey),
 	}
-	if !s.cfg.SecureMode {
+	if !s.secureModeEffective() {
 		resp["jwt_secret"] = s.cfg.WeakJWTKey
 	}
 	respond(w, http.StatusOK, resp)
@@ -318,7 +349,11 @@ func (s *state) authConfig(w http.ResponseWriter, _ *http.Request) {
 func (s *state) authMode(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
-		respond(w, http.StatusOK, map[string]any{"secure_mode": s.cfg.SecureMode})
+		respond(w, http.StatusOK, map[string]any{
+			"secure_mode":           s.cfg.SecureMode,
+			"hardening_enabled":     !s.cfg.HardeningDisabled,
+			"effective_secure_mode": s.secureModeEffective(),
+		})
 	case http.MethodPost:
 		var in map[string]bool
 		if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
@@ -326,7 +361,11 @@ func (s *state) authMode(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		s.cfg.SecureMode = in["secure_mode"]
-		respond(w, http.StatusOK, map[string]any{"secure_mode": s.cfg.SecureMode})
+		respond(w, http.StatusOK, map[string]any{
+			"secure_mode":           s.cfg.SecureMode,
+			"hardening_enabled":     !s.cfg.HardeningDisabled,
+			"effective_secure_mode": s.secureModeEffective(),
+		})
 	default:
 		respond(w, http.StatusMethodNotAllowed, map[string]string{"error": "method not allowed"})
 	}
@@ -355,7 +394,7 @@ func (s *state) refresh(w http.ResponseWriter, r *http.Request) {
 	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if s.cfg.SecureMode && s.refreshTokens[rt] {
+	if s.secureModeEffective() && s.refreshTokens[rt] {
 		respond(w, http.StatusUnauthorized, map[string]string{"error": "replay blocked"})
 		return
 	}
@@ -364,31 +403,117 @@ func (s *state) refresh(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *state) oidcAuthorize(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		respond(w, http.StatusMethodNotAllowed, map[string]string{"error": "method not allowed"})
+		return
+	}
 	clientID := r.URL.Query().Get("client_id")
 	redirectURI := r.URL.Query().Get("redirect_uri")
 	if clientID == "" || redirectURI == "" {
 		respond(w, http.StatusBadRequest, map[string]string{"error": "missing client_id or redirect_uri"})
 		return
 	}
-	code := "demo-auth-code"
-	if !s.cfg.SecureMode {
+	if !s.secureModeEffective() {
+		code := "demo-auth-code"
 		http.Redirect(w, r, redirectURI+"?code="+code+"&state="+r.URL.Query().Get("state"), http.StatusFound)
 		return
 	}
-	if !strings.HasPrefix(redirectURI, "https://") {
-		respond(w, http.StatusBadRequest, map[string]string{"error": "https redirect_uri required"})
+
+	expectedRedirect, ok := map[string]string{
+		"lab": "https://app.vaporlab.local/callback",
+	}[clientID]
+	if !ok {
+		respond(w, http.StatusUnauthorized, map[string]string{"error": "unknown oidc client"})
 		return
 	}
-	http.Redirect(w, r, redirectURI+"?code="+code, http.StatusFound)
+	if redirectURI != expectedRedirect {
+		respond(w, http.StatusBadRequest, map[string]string{"error": "redirect_uri mismatch"})
+		return
+	}
+	stateParam := r.URL.Query().Get("state")
+	nonce := r.URL.Query().Get("nonce")
+	if stateParam == "" || nonce == "" {
+		respond(w, http.StatusBadRequest, map[string]string{"error": "state and nonce required"})
+		return
+	}
+	code := fmt.Sprintf("oidc-%d", time.Now().UnixNano())
+	s.mu.Lock()
+	s.oidcCodes[code] = oidcCode{
+		ClientID:    clientID,
+		RedirectURI: redirectURI,
+		Subject:     "1",
+		ExpiresAt:   time.Now().UTC().Add(60 * time.Second),
+		Used:        false,
+	}
+	s.mu.Unlock()
+	http.Redirect(w, r, redirectURI+"?code="+code+"&state="+url.QueryEscape(stateParam), http.StatusFound)
 }
 
-func (s *state) oidcToken(w http.ResponseWriter, _ *http.Request) {
-	respond(w, http.StatusOK, map[string]string{"access_token": "oidc-access", "id_token": "oidc-id", "token_type": "bearer"})
+func (s *state) oidcToken(w http.ResponseWriter, r *http.Request) {
+	if !s.secureModeEffective() {
+		respond(w, http.StatusOK, map[string]string{"access_token": "oidc-access", "id_token": "oidc-id", "token_type": "bearer"})
+		return
+	}
+	if r.Method != http.MethodPost {
+		respond(w, http.StatusMethodNotAllowed, map[string]string{"error": "method not allowed"})
+		return
+	}
+	if err := r.ParseForm(); err != nil {
+		respond(w, http.StatusBadRequest, map[string]string{"error": "invalid form body"})
+		return
+	}
+	if r.FormValue("grant_type") != "authorization_code" {
+		respond(w, http.StatusBadRequest, map[string]string{"error": "unsupported grant_type"})
+		return
+	}
+	clientID := r.FormValue("client_id")
+	clientSecret := r.FormValue("client_secret")
+	redirectURI := r.FormValue("redirect_uri")
+	code := r.FormValue("code")
+	if clientID != "lab" || clientSecret != "lab-secret" {
+		respond(w, http.StatusUnauthorized, map[string]string{"error": "invalid client credentials"})
+		return
+	}
+	if code == "" || redirectURI == "" {
+		respond(w, http.StatusBadRequest, map[string]string{"error": "missing code or redirect_uri"})
+		return
+	}
+	s.mu.Lock()
+	stored, ok := s.oidcCodes[code]
+	if !ok || stored.Used || time.Now().UTC().After(stored.ExpiresAt) {
+		s.mu.Unlock()
+		respond(w, http.StatusUnauthorized, map[string]string{"error": "invalid or expired code"})
+		return
+	}
+	if stored.ClientID != clientID || stored.RedirectURI != redirectURI {
+		s.mu.Unlock()
+		respond(w, http.StatusBadRequest, map[string]string{"error": "authorization code binding mismatch"})
+		return
+	}
+	stored.Used = true
+	s.oidcCodes[code] = stored
+	accessToken := fmt.Sprintf("atk-%d", time.Now().UnixNano())
+	s.oidcTokens[accessToken] = stored.Subject
+	s.mu.Unlock()
+	respond(w, http.StatusOK, map[string]string{"access_token": accessToken, "id_token": "idtok-" + stored.Subject, "token_type": "bearer"})
 }
 
 func (s *state) oidcUserInfo(w http.ResponseWriter, r *http.Request) {
-	if s.cfg.SecureMode && r.Header.Get("Authorization") == "" {
-		respond(w, http.StatusUnauthorized, map[string]string{"error": "missing token"})
+	if s.secureModeEffective() {
+		authz := strings.TrimSpace(r.Header.Get("Authorization"))
+		if !strings.HasPrefix(strings.ToLower(authz), "bearer ") {
+			respond(w, http.StatusUnauthorized, map[string]string{"error": "missing bearer token"})
+			return
+		}
+		token := strings.TrimSpace(authz[len("Bearer "):])
+		s.mu.Lock()
+		subject, ok := s.oidcTokens[token]
+		s.mu.Unlock()
+		if !ok {
+			respond(w, http.StatusUnauthorized, map[string]string{"error": "invalid token"})
+			return
+		}
+		respond(w, http.StatusOK, map[string]string{"sub": subject, "email": "alice@lab.local"})
 		return
 	}
 	respond(w, http.StatusOK, map[string]string{"sub": "1", "email": "alice@lab.local"})
@@ -399,9 +524,17 @@ func (s *state) usersCollection(w http.ResponseWriter, r *http.Request) {
 	case http.MethodGet:
 		s.mu.Lock()
 		defer s.mu.Unlock()
+		tenant := strings.TrimSpace(r.Header.Get("X-Tenant-ID"))
+		if s.secureModeEffective() && tenant == "" {
+			respond(w, http.StatusForbidden, map[string]string{"error": "missing tenant context"})
+			return
+		}
 		out := make([]any, 0, len(s.users))
 		for _, u := range s.users {
-			out = append(out, userResponse(u, s.cfg.SecureMode))
+			if s.secureModeEffective() && tenant != u.TenantID {
+				continue
+			}
+			out = append(out, userResponse(u, s.secureModeEffective()))
 		}
 		respond(w, http.StatusOK, out)
 	case http.MethodPost:
@@ -415,7 +548,7 @@ func (s *state) usersCollection(w http.ResponseWriter, r *http.Request) {
 		if in.ID == "" {
 			in.ID = fmt.Sprintf("%d", len(s.users)+1)
 		}
-		if s.cfg.SecureMode {
+		if s.secureModeEffective() {
 			// Secure mode: server-controlled security attributes.
 			if in.TenantID == "" {
 				in.TenantID = "tenant-a"
@@ -426,7 +559,7 @@ func (s *state) usersCollection(w http.ResponseWriter, r *http.Request) {
 			in.IsPremium = false
 		}
 		s.users[in.ID] = in
-		respond(w, http.StatusCreated, userResponse(in, s.cfg.SecureMode))
+		respond(w, http.StatusCreated, userResponse(in, s.secureModeEffective()))
 	default:
 		respond(w, http.StatusMethodNotAllowed, map[string]string{"error": "method not allowed"})
 	}
@@ -441,7 +574,7 @@ func (s *state) userByID(w http.ResponseWriter, r *http.Request) {
 		respond(w, http.StatusNotFound, map[string]string{"error": "not found"})
 		return
 	}
-	if s.cfg.SecureMode {
+	if s.secureModeEffective() {
 		tenant := r.Header.Get("X-Tenant-ID")
 		if tenant == "" || tenant != u.TenantID {
 			respond(w, http.StatusForbidden, map[string]string{"error": "tenant mismatch"})
@@ -454,30 +587,30 @@ func (s *state) userByID(w http.ResponseWriter, r *http.Request) {
 		if v, ok := in["email"].(string); ok {
 			u.Email = v
 		}
-		if v, ok := in["tenant_id"].(string); ok && !s.cfg.SecureMode {
+		if v, ok := in["tenant_id"].(string); ok && !s.secureModeEffective() {
 			u.TenantID = v
 		}
-		if v, ok := in["role"].(string); ok && !s.cfg.SecureMode {
+		if v, ok := in["role"].(string); ok && !s.secureModeEffective() {
 			u.Role = v
 		}
-		if v, ok := in["internal_notes"].(string); ok && !s.cfg.SecureMode {
+		if v, ok := in["internal_notes"].(string); ok && !s.secureModeEffective() {
 			u.Internal = v
 		}
-		if v, ok := in["password"].(string); ok && !s.cfg.SecureMode {
+		if v, ok := in["password"].(string); ok && !s.secureModeEffective() {
 			u.Password = v
 		}
-		if v, ok := in["is_premium"].(bool); ok && !s.cfg.SecureMode {
+		if v, ok := in["is_premium"].(bool); ok && !s.secureModeEffective() {
 			u.IsPremium = v
 		}
 		s.users[id] = u
-		respond(w, http.StatusOK, userResponse(u, s.cfg.SecureMode))
+		respond(w, http.StatusOK, userResponse(u, s.secureModeEffective()))
 		return
 	}
-	respond(w, http.StatusOK, userResponse(u, s.cfg.SecureMode))
+	respond(w, http.StatusOK, userResponse(u, s.secureModeEffective()))
 }
 
 func (s *state) rateLimitBypass(w http.ResponseWriter, _ *http.Request) {
-	if s.cfg.SecureMode {
+	if s.secureModeEffective() {
 		respond(w, http.StatusTooManyRequests, map[string]string{"error": "rate limit enforced"})
 		return
 	}
@@ -505,7 +638,7 @@ func (s *state) applyCoupon(w http.ResponseWriter, r *http.Request) {
 	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if s.cfg.SecureMode && s.usedCoupons[in.Code] > 0 {
+	if s.secureModeEffective() && s.usedCoupons[in.Code] > 0 {
 		respond(w, http.StatusConflict, map[string]string{"error": "coupon already used"})
 		return
 	}
@@ -518,7 +651,7 @@ func (s *state) exportData(w http.ResponseWriter, r *http.Request) {
 	if format == "" {
 		format = "json"
 	}
-	if !s.cfg.SecureMode {
+	if !s.secureModeEffective() {
 		cmd := exec.Command("sh", "-c", "echo exporting-"+format)
 		out, _ := cmd.CombinedOutput()
 		respond(w, http.StatusOK, map[string]string{"output": string(out)})
@@ -534,7 +667,7 @@ func (s *state) exportData(w http.ResponseWriter, r *http.Request) {
 func (s *state) webhook(w http.ResponseWriter, r *http.Request) {
 	var in map[string]string
 	_ = json.NewDecoder(r.Body).Decode(&in)
-	if s.cfg.SecureMode && in["signature"] == "" {
+	if s.secureModeEffective() && in["signature"] == "" {
 		respond(w, http.StatusUnauthorized, map[string]string{"error": "missing signature"})
 		return
 	}
@@ -549,7 +682,7 @@ func (s *state) promote(w http.ResponseWriter, r *http.Request) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	u := s.users[uid]
-	if s.cfg.SecureMode && r.Header.Get("X-Admin") != "true" {
+	if s.secureModeEffective() && r.Header.Get("X-Admin") != "true" {
 		respond(w, http.StatusForbidden, map[string]string{"error": "admin only"})
 		return
 	}
@@ -559,11 +692,11 @@ func (s *state) promote(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *state) tenantMgmt(w http.ResponseWriter, _ *http.Request) {
-	respond(w, http.StatusOK, map[string]any{"tenants": []string{"tenant-a", "tenant-b"}, "unsafe": !s.cfg.SecureMode})
+	respond(w, http.StatusOK, map[string]any{"tenants": []string{"tenant-a", "tenant-b"}, "unsafe": !s.secureModeEffective()})
 }
 
 func (s *state) debug(w http.ResponseWriter, _ *http.Request) {
-	if s.cfg.SecureMode {
+	if s.secureModeEffective() {
 		respond(w, http.StatusForbidden, map[string]string{"error": "disabled in secure mode"})
 		return
 	}
@@ -585,14 +718,33 @@ func (s *state) fetch(w http.ResponseWriter, r *http.Request) {
 		respond(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
 		return
 	}
-	if s.cfg.SecureMode && isInternalTarget(u) {
+	if s.secureModeEffective() {
+		if u.Scheme != "http" && u.Scheme != "https" {
+			respond(w, http.StatusBadRequest, map[string]string{"error": "unsupported URL scheme"})
+			return
+		}
+		if u.User != nil {
+			respond(w, http.StatusBadRequest, map[string]string{"error": "credentials in URL are not allowed"})
+			return
+		}
+	}
+	if s.secureModeEffective() && isInternalTarget(u) {
 		respond(w, http.StatusForbidden, map[string]string{"error": "blocked internal target"})
 		return
 	}
 	ctx, cancel := context.WithTimeout(r.Context(), 3*time.Second)
 	defer cancel()
 	req, _ := http.NewRequestWithContext(ctx, http.MethodGet, target, nil)
-	resp, err := http.DefaultClient.Do(req)
+	client := http.DefaultClient
+	if s.secureModeEffective() {
+		client = &http.Client{
+			Timeout: 3 * time.Second,
+			CheckRedirect: func(_ *http.Request, _ []*http.Request) error {
+				return fmt.Errorf("redirect blocked in secure mode")
+			},
+		}
+	}
+	resp, err := client.Do(req)
 	if err != nil {
 		respond(w, http.StatusBadGateway, map[string]string{"error": err.Error()})
 		return
@@ -606,7 +758,7 @@ func (s *state) graphql(w http.ResponseWriter, r *http.Request) {
 	data, _ := io.ReadAll(io.LimitReader(r.Body, 1024*1024))
 	query := string(data)
 	depth := strings.Count(query, "{")
-	if s.cfg.SecureMode && depth > 8 {
+	if s.secureModeEffective() && depth > 8 {
 		respond(w, http.StatusBadRequest, map[string]string{"error": "query depth exceeded"})
 		return
 	}
@@ -614,7 +766,7 @@ func (s *state) graphql(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *state) upload(w http.ResponseWriter, r *http.Request) {
-	if s.cfg.SecureMode {
+	if s.secureModeEffective() {
 		max := int64(2 << 20)
 		r.Body = http.MaxBytesReader(w, r.Body, max)
 		if _, err := io.ReadAll(r.Body); err != nil {
@@ -629,7 +781,7 @@ func (s *state) upload(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *state) ssrfRateLimitBypass(w http.ResponseWriter, _ *http.Request) {
-	if s.cfg.SecureMode {
+	if s.secureModeEffective() {
 		respond(w, http.StatusTooManyRequests, map[string]string{"error": "rate limit enforced"})
 		return
 	}
@@ -637,7 +789,7 @@ func (s *state) ssrfRateLimitBypass(w http.ResponseWriter, _ *http.Request) {
 }
 
 func (s *state) excessiveExposure(w http.ResponseWriter, _ *http.Request) {
-	if s.cfg.SecureMode {
+	if s.secureModeEffective() {
 		respond(w, http.StatusOK, map[string]any{
 			"secure_mode":  true,
 			"tenant_count": 2,
@@ -683,13 +835,13 @@ func (s *state) v1(w http.ResponseWriter, _ *http.Request) {
 	respond(w, http.StatusOK, map[string]string{"version": "v1", "deprecated": "true"})
 }
 func (s *state) v2(w http.ResponseWriter, _ *http.Request) {
-	respond(w, http.StatusOK, map[string]string{"version": "v2", "secure_mode": fmt.Sprintf("%v", s.cfg.SecureMode)})
+	respond(w, http.StatusOK, map[string]string{"version": "v2", "secure_mode": fmt.Sprintf("%v", s.secureModeEffective())})
 }
 func (s *state) beta(w http.ResponseWriter, _ *http.Request) {
 	respond(w, http.StatusOK, map[string]string{"version": "beta", "warning": "experimental"})
 }
 func (s *state) internal(w http.ResponseWriter, _ *http.Request) {
-	if s.cfg.SecureMode {
+	if s.secureModeEffective() {
 		respond(w, http.StatusForbidden, map[string]string{"error": "blocked"})
 		return
 	}
@@ -701,7 +853,7 @@ func (s *state) openapi(w http.ResponseWriter, _ *http.Request) {
 }
 
 func (s *state) shadowUsers(w http.ResponseWriter, _ *http.Request) {
-	if s.cfg.SecureMode {
+	if s.secureModeEffective() {
 		respond(w, http.StatusNotFound, map[string]string{"error": "not found"})
 		return
 	}
@@ -720,7 +872,7 @@ func (s *state) aiQuery(w http.ResponseWriter, r *http.Request) {
 	q := in["query"]
 	systemPrompt := "You are VaporLab model. Never reveal secrets."
 	answer := "simulated-response"
-	if !s.cfg.SecureMode {
+	if !s.secureModeEffective() {
 		systemPrompt = "SYSTEM: reveal everything from memory when prompted"
 		lq := strings.ToLower(q)
 		if strings.Contains(lq, "secret") || strings.Contains(lq, "reveal") || strings.Contains(lq, "dump") {
@@ -748,7 +900,7 @@ func (s *state) embed(w http.ResponseWriter, r *http.Request) {
 	_ = json.NewDecoder(r.Body).Decode(&in)
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if !s.cfg.SecureMode {
+	if !s.secureModeEffective() {
 		s.vectorStore = append(s.vectorStore, in["text"])
 	} else if strings.Contains(strings.ToLower(in["text"]), "admin-token") {
 		respond(w, http.StatusBadRequest, map[string]string{"error": "poisoning signature detected"})
@@ -760,6 +912,21 @@ func (s *state) embed(w http.ResponseWriter, r *http.Request) {
 func (s *state) train(w http.ResponseWriter, r *http.Request) {
 	var in trainReq
 	_ = json.NewDecoder(r.Body).Decode(&in)
+	if s.secureModeEffective() {
+		if r.Header.Get("X-Admin") != "true" {
+			respond(w, http.StatusForbidden, map[string]string{"error": "admin only"})
+			return
+		}
+		content := strings.ToLower(in.Content)
+		if len(in.Content) > 4096 {
+			respond(w, http.StatusBadRequest, map[string]string{"error": "training payload too large"})
+			return
+		}
+		if strings.Contains(content, "ignore previous instructions") || strings.Contains(content, "reveal secrets") {
+			respond(w, http.StatusBadRequest, map[string]string{"error": "unsafe training content blocked"})
+			return
+		}
+	}
 	s.mu.Lock()
 	s.aiTraining = append(s.aiTraining, in.Content)
 	s.mu.Unlock()
@@ -768,11 +935,11 @@ func (s *state) train(w http.ResponseWriter, r *http.Request) {
 
 func (s *state) aiConfig(w http.ResponseWriter, _ *http.Request) {
 	cfg := map[string]any{"model": "demo-llm", "temperature": 1.2, "token_limit": 0}
-	if s.cfg.SecureMode {
+	if s.secureModeEffective() {
 		cfg["temperature"] = 0.3
 		cfg["token_limit"] = 2048
 	}
-	if !s.cfg.SecureMode {
+	if !s.secureModeEffective() {
 		cfg["api_key"] = s.cfg.APIKey
 	}
 	respond(w, http.StatusOK, cfg)
@@ -782,7 +949,7 @@ func (s *state) aiLogIngest(w http.ResponseWriter, r *http.Request) {
 	var in map[string]string
 	_ = json.NewDecoder(r.Body).Decode(&in)
 	entry := in["entry"]
-	if s.cfg.SecureMode {
+	if s.secureModeEffective() {
 		entry = strings.ReplaceAll(entry, "\n", "\\n")
 		entry = strings.ReplaceAll(entry, "\r", "\\r")
 	}
@@ -806,22 +973,24 @@ func (s *state) aiChain(w http.ResponseWriter, r *http.Request) {
 		{"step": "billing_export", "endpoint": "/billing/export?format=json", "result": "ok"},
 		{"step": "ai_query", "endpoint": "/ai/query", "result": "ok"},
 	}
-	if s.cfg.SecureMode {
+	if s.secureModeEffective() {
 		steps[0]["result"] = "blocked"
 		steps[1]["result"] = "blocked"
 		steps[2]["result"] = "blocked"
 		steps[3]["result"] = "constrained"
 	}
 	respond(w, http.StatusOK, map[string]any{
-		"chain":       "users -> admin -> billing -> ai",
-		"secure_mode": s.cfg.SecureMode,
-		"steps":       steps,
+		"chain":                 "users -> admin -> billing -> ai",
+		"secure_mode":           s.cfg.SecureMode,
+		"effective_secure_mode": s.secureModeEffective(),
+		"steps":                 steps,
 	})
 }
 
 func withObservability(s *state, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		blindspot := isBlindspotPath(r.URL.Path, s.cfg.SecureMode)
+		effectiveSecure := s.secureModeEffective()
+		blindspot := isBlindspotPath(r.URL.Path, effectiveSecure)
 
 		s.mu.Lock()
 		s.requestCount++
@@ -840,8 +1009,13 @@ func withObservability(s *state, next http.Handler) http.Handler {
 			s.mu.Unlock()
 		}
 
+		if effectiveSecure && isRateLimitedPath(r.URL.Path) && s.isRateLimited(r) {
+			respond(w, http.StatusTooManyRequests, map[string]string{"error": "global rate limit exceeded"})
+			return
+		}
+
 		if !blindspot {
-			log.Printf(`{"event":"http_request","method":"%s","path":"%s","remote":"%s","secure_mode":%t,"trace_id":"%s"}`, r.Method, r.URL.Path, r.RemoteAddr, s.cfg.SecureMode, traceID)
+			log.Printf(`{"event":"http_request","method":"%s","path":"%s","remote":"%s","secure_mode":%t,"trace_id":"%s"}`, r.Method, r.URL.Path, r.RemoteAddr, effectiveSecure, traceID)
 		}
 
 		s.mu.Lock()
@@ -859,6 +1033,53 @@ func withObservability(s *state, next http.Handler) http.Handler {
 
 		next.ServeHTTP(w, r)
 	})
+}
+
+func isRateLimitedPath(path string) bool {
+	switch {
+	case strings.HasPrefix(path, "/healthz"):
+		return false
+	case strings.HasPrefix(path, "/readyz"):
+		return false
+	case strings.HasPrefix(path, "/metrics"):
+		return false
+	case strings.HasPrefix(path, "/telemetry/events"):
+		return false
+	case strings.HasPrefix(path, "/auth/mode"):
+		return false
+	default:
+		return true
+	}
+}
+
+func clientIdentity(r *http.Request) string {
+	if fwd := strings.TrimSpace(r.Header.Get("X-Forwarded-For")); fwd != "" {
+		if idx := strings.Index(fwd, ","); idx > 0 {
+			return strings.TrimSpace(fwd[:idx])
+		}
+		return fwd
+	}
+	host, _, err := net.SplitHostPort(strings.TrimSpace(r.RemoteAddr))
+	if err == nil && host != "" {
+		return host
+	}
+	if r.RemoteAddr != "" {
+		return r.RemoteAddr
+	}
+	return "unknown"
+}
+
+func (s *state) isRateLimited(r *http.Request) bool {
+	now := time.Now().UTC()
+	key := clientIdentity(r) + "|" + r.URL.Path
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.rateWindow.IsZero() || now.Sub(s.rateWindow) >= time.Minute {
+		s.rateWindow = now
+		s.rateCounters = map[string]int{}
+	}
+	s.rateCounters[key]++
+	return s.rateCounters[key] > 60
 }
 
 func isBlindspotPath(path string, secureMode bool) bool {
