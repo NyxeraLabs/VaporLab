@@ -1,3 +1,5 @@
+![VaporLab Logo](VaporLab_Logo.png)
+
 # VaporLab
 
 [![Dev CI](https://img.shields.io/badge/CI-dev-blue)](.github/workflows/dev.yml)
