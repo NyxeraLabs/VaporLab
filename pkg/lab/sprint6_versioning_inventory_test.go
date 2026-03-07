@@ -1,6 +1,7 @@
 package lab
 
 import (
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -20,6 +21,61 @@ func TestVersionEndpointsExposeDriftSurface(t *testing.T) {
 		if res.Code != http.StatusOK {
 			t.Fatalf("expected 200 for %s, got %d", path, res.Code)
 		}
+	}
+}
+
+func TestOpenAPIIncludesCoreEndpoints(t *testing.T) {
+	h := New(config.Config{SecureMode: false, WeakJWTKey: "weaksecret"})
+	req := httptest.NewRequest(http.MethodGet, "/openapi.json", nil)
+	res := httptest.NewRecorder()
+	h.ServeHTTP(res, req)
+
+	if res.Code != http.StatusOK {
+		t.Fatalf("expected 200 for /openapi.json, got %d", res.Code)
+	}
+
+	var body map[string]any
+	if err := json.Unmarshal(res.Body.Bytes(), &body); err != nil {
+		t.Fatalf("failed to decode openapi response: %v", err)
+	}
+
+	pathsRaw, ok := body["paths"].(map[string]any)
+	if !ok {
+		t.Fatalf("expected paths object in openapi response")
+	}
+
+	expectedPaths := []string{
+		"/healthz",
+		"/auth/jwt/issue",
+		"/users",
+		"/users/{id}",
+		"/billing/coupon/apply",
+		"/operator/modules",
+		"/openapi.json",
+		"/swagger",
+		"/ai/chain/run",
+	}
+	for _, p := range expectedPaths {
+		if _, exists := pathsRaw[p]; !exists {
+			t.Fatalf("expected openapi path %s to be documented", p)
+		}
+	}
+}
+
+func TestSwaggerUIServed(t *testing.T) {
+	h := New(config.Config{SecureMode: false, WeakJWTKey: "weaksecret"})
+	req := httptest.NewRequest(http.MethodGet, "/swagger", nil)
+	res := httptest.NewRecorder()
+	h.ServeHTTP(res, req)
+
+	if res.Code != http.StatusOK {
+		t.Fatalf("expected 200 for /swagger, got %d", res.Code)
+	}
+	if ct := res.Header().Get("Content-Type"); !strings.Contains(ct, "text/html") {
+		t.Fatalf("expected html content-type for /swagger, got %s", ct)
+	}
+	if !strings.Contains(res.Body.String(), "/openapi.json") {
+		t.Fatalf("expected swagger page to reference /openapi.json")
 	}
 }
 

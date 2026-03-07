@@ -13,6 +13,7 @@ import (
 	"net/http"
 	"net/url"
 	"os/exec"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -53,6 +54,14 @@ type oidcCode struct {
 	Subject     string
 	ExpiresAt   time.Time
 	Used        bool
+}
+
+type routeDoc struct {
+	Path        string
+	Methods     []string
+	Tag         string
+	Summary     string
+	Description string
 }
 
 type state struct {
@@ -104,6 +113,51 @@ var defaultVulnFlags = map[string]bool{
 	"ai_log_injection":                 true,
 	"cross_service_ai_chain":           true,
 	"unauthenticated_metrics_exposure": true,
+}
+
+var apiRouteDocs = []routeDoc{
+	{Path: "/healthz", Methods: []string{http.MethodGet}, Tag: "System", Summary: "Health check", Description: "Returns service health and secure mode status."},
+	{Path: "/readyz", Methods: []string{http.MethodGet}, Tag: "System", Summary: "Readiness check", Description: "Returns readiness and dependency status."},
+	{Path: "/metrics", Methods: []string{http.MethodGet}, Tag: "System", Summary: "Prometheus metrics", Description: "Returns Prometheus-style metrics."},
+	{Path: "/telemetry/events", Methods: []string{http.MethodGet}, Tag: "System", Summary: "Telemetry events", Description: "Returns recent request telemetry events."},
+	{Path: "/auth/jwt/issue", Methods: []string{http.MethodPost}, Tag: "Identity", Summary: "Issue JWT", Description: "Issues a JWT for the requested user."},
+	{Path: "/auth/jwt/validate", Methods: []string{http.MethodPost}, Tag: "Identity", Summary: "Validate JWT", Description: "Validates a JWT and returns decoded claims."},
+	{Path: "/auth/config", Methods: []string{http.MethodGet}, Tag: "Identity", Summary: "Auth configuration", Description: "Returns auth mode configuration."},
+	{Path: "/auth/mode", Methods: []string{http.MethodGet, http.MethodPost}, Tag: "Identity", Summary: "Get or set auth mode", Description: "Reads or updates secure mode."},
+	{Path: "/auth/refresh", Methods: []string{http.MethodPost}, Tag: "Identity", Summary: "Refresh access token", Description: "Exchanges a refresh token for an access token."},
+	{Path: "/oidc/authorize", Methods: []string{http.MethodGet}, Tag: "Identity", Summary: "OIDC authorize", Description: "Starts OIDC authorization code flow."},
+	{Path: "/oidc/token", Methods: []string{http.MethodPost}, Tag: "Identity", Summary: "OIDC token", Description: "Exchanges authorization code for tokens."},
+	{Path: "/oidc/userinfo", Methods: []string{http.MethodGet}, Tag: "Identity", Summary: "OIDC userinfo", Description: "Returns user claims for a bearer token."},
+	{Path: "/users", Methods: []string{http.MethodGet, http.MethodPost}, Tag: "Users", Summary: "List or create users", Description: "Lists users or creates a user."},
+	{Path: "/users/{id}", Methods: []string{http.MethodGet, http.MethodPatch}, Tag: "Users", Summary: "User by ID", Description: "Reads or updates a user by ID."},
+	{Path: "/users/rate-limit-bypass", Methods: []string{http.MethodGet}, Tag: "Users", Summary: "Rate limit bypass probe", Description: "Simulates user rate-limit bypass behavior."},
+	{Path: "/billing/coupon/apply", Methods: []string{http.MethodPost}, Tag: "Billing", Summary: "Apply coupon", Description: "Applies coupon code to billing amount."},
+	{Path: "/billing/export", Methods: []string{http.MethodGet}, Tag: "Billing", Summary: "Export billing data", Description: "Exports billing data in requested format."},
+	{Path: "/billing/webhook", Methods: []string{http.MethodPost}, Tag: "Billing", Summary: "Billing webhook", Description: "Processes inbound billing webhook payload."},
+	{Path: "/admin/promote", Methods: []string{http.MethodPost}, Tag: "Admin", Summary: "Promote user", Description: "Promotes a user to admin role."},
+	{Path: "/admin/tenant", Methods: []string{http.MethodGet}, Tag: "Admin", Summary: "Tenant management", Description: "Returns tenant inventory."},
+	{Path: "/admin/debug", Methods: []string{http.MethodGet}, Tag: "Admin", Summary: "Debug endpoint", Description: "Returns debug information when enabled."},
+	{Path: "/operator/modules", Methods: []string{http.MethodGet, http.MethodPost}, Tag: "Operator", Summary: "Module controls", Description: "Gets or updates module and vulnerability flags."},
+	{Path: "/chain/run", Methods: []string{http.MethodGet}, Tag: "Operator", Summary: "Attack chain map", Description: "Returns chained vulnerability graph."},
+	{Path: "/ssrf/fetch", Methods: []string{http.MethodGet}, Tag: "Configuration", Summary: "Fetch URL", Description: "Fetches target URL (SSRF simulation)."},
+	{Path: "/graphql", Methods: []string{http.MethodPost}, Tag: "Configuration", Summary: "GraphQL probe", Description: "Runs a GraphQL query depth probe."},
+	{Path: "/upload", Methods: []string{http.MethodPost}, Tag: "Configuration", Summary: "Upload payload", Description: "Processes uploaded payload for size checks."},
+	{Path: "/ssrf/rate-limit-bypass", Methods: []string{http.MethodGet}, Tag: "Configuration", Summary: "SSRF rate-limit bypass probe", Description: "Simulates SSRF rate-limit bypass behavior."},
+	{Path: "/data/exposure", Methods: []string{http.MethodGet}, Tag: "Configuration", Summary: "Data exposure probe", Description: "Returns data exposure posture."},
+	{Path: "/v1/status", Methods: []string{http.MethodGet}, Tag: "Inventory", Summary: "Version v1 status", Description: "Returns v1 status payload."},
+	{Path: "/v2/status", Methods: []string{http.MethodGet}, Tag: "Inventory", Summary: "Version v2 status", Description: "Returns v2 status payload."},
+	{Path: "/beta/status", Methods: []string{http.MethodGet}, Tag: "Inventory", Summary: "Beta status", Description: "Returns beta status payload."},
+	{Path: "/internal/status", Methods: []string{http.MethodGet}, Tag: "Inventory", Summary: "Internal status", Description: "Returns internal status when exposed."},
+	{Path: "/openapi.json", Methods: []string{http.MethodGet}, Tag: "Documentation", Summary: "OpenAPI schema", Description: "Returns OpenAPI schema for the full API."},
+	{Path: "/swagger", Methods: []string{http.MethodGet}, Tag: "Documentation", Summary: "Swagger UI", Description: "Serves Swagger UI for API browsing."},
+	{Path: "/shadow/users", Methods: []string{http.MethodGet}, Tag: "Inventory", Summary: "Shadow users", Description: "Returns shadow users endpoint output when exposed."},
+	{Path: "/ai/query", Methods: []string{http.MethodPost}, Tag: "AI", Summary: "AI query", Description: "Runs an AI model query."},
+	{Path: "/kb/search", Methods: []string{http.MethodGet}, Tag: "AI", Summary: "Knowledge base search", Description: "Searches vector memory by query term."},
+	{Path: "/ai/embed", Methods: []string{http.MethodPost}, Tag: "AI", Summary: "Embed content", Description: "Stores text embedding input."},
+	{Path: "/ai/train", Methods: []string{http.MethodPost}, Tag: "AI", Summary: "Train AI", Description: "Adds AI training content."},
+	{Path: "/ai/config", Methods: []string{http.MethodGet}, Tag: "AI", Summary: "AI configuration", Description: "Returns AI runtime configuration."},
+	{Path: "/ai/logs/ingest", Methods: []string{http.MethodPost}, Tag: "AI", Summary: "Ingest AI logs", Description: "Ingests AI log entries."},
+	{Path: "/ai/chain/run", Methods: []string{http.MethodPost}, Tag: "AI", Summary: "Run AI chain", Description: "Simulates cross-service AI attack chain."},
 }
 
 func New(cfg config.Config) http.Handler {
@@ -175,6 +229,8 @@ func New(cfg config.Config) http.Handler {
 	mux.HandleFunc("/beta/status", s.beta)
 	mux.HandleFunc("/internal/status", s.internal)
 	mux.HandleFunc("/openapi.json", s.openapi)
+	mux.HandleFunc("/swagger", s.swaggerUI)
+	mux.HandleFunc("/swagger/", s.swaggerUI)
 	mux.HandleFunc("/shadow/users", s.shadowUsers)
 
 	mux.HandleFunc("/ai/query", s.aiQuery)
@@ -1093,7 +1149,134 @@ func (s *state) internal(w http.ResponseWriter, _ *http.Request) {
 }
 
 func (s *state) openapi(w http.ResponseWriter, _ *http.Request) {
-	respond(w, http.StatusOK, map[string]any{"openapi": "3.0.0", "title": "VaporLab API", "exposed": true})
+	respond(w, http.StatusOK, s.openapiDocument())
+}
+
+func (s *state) swaggerUI(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		respond(w, http.StatusMethodNotAllowed, map[string]string{"error": "method not allowed"})
+		return
+	}
+	const page = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VaporLab Swagger UI</title>
+  <link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist@5/swagger-ui.css" />
+</head>
+<body>
+  <div id="swagger-ui"></div>
+  <script src="https://unpkg.com/swagger-ui-dist@5/swagger-ui-bundle.js"></script>
+  <script>
+    window.ui = SwaggerUIBundle({
+      url: "/openapi.json",
+      dom_id: "#swagger-ui",
+      deepLinking: true
+    });
+  </script>
+</body>
+</html>`
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write([]byte(page))
+}
+
+func (s *state) openapiDocument() map[string]any {
+	paths := map[string]any{}
+	tagsByName := map[string]struct{}{}
+
+	for _, doc := range apiRouteDocs {
+		tagsByName[doc.Tag] = struct{}{}
+		operations := map[string]any{}
+		for _, method := range doc.Methods {
+			methodLower := strings.ToLower(method)
+			op := map[string]any{
+				"summary":     doc.Summary,
+				"description": doc.Description,
+				"tags":        []string{doc.Tag},
+				"operationId": operationID(doc.Path, methodLower),
+				"responses": map[string]any{
+					"200": map[string]any{
+						"description": "Successful response",
+						"content": map[string]any{
+							"application/json": map[string]any{
+								"schema": map[string]any{"type": "object"},
+							},
+						},
+					},
+				},
+			}
+			if strings.Contains(doc.Path, "{id}") {
+				op["parameters"] = []map[string]any{
+					{
+						"name":        "id",
+						"in":          "path",
+						"required":    true,
+						"description": "User identifier",
+						"schema":      map[string]any{"type": "string"},
+					},
+				}
+			}
+			if method == http.MethodPost || method == http.MethodPatch {
+				op["requestBody"] = map[string]any{
+					"required": false,
+					"content": map[string]any{
+						"application/json": map[string]any{
+							"schema": map[string]any{"type": "object"},
+						},
+					},
+				}
+			}
+			if doc.Path == "/oidc/token" && method == http.MethodPost {
+				op["requestBody"] = map[string]any{
+					"required": true,
+					"content": map[string]any{
+						"application/x-www-form-urlencoded": map[string]any{
+							"schema": map[string]any{"type": "object"},
+						},
+					},
+				}
+			}
+			operations[methodLower] = op
+		}
+		paths[doc.Path] = operations
+	}
+
+	tagNames := make([]string, 0, len(tagsByName))
+	for name := range tagsByName {
+		tagNames = append(tagNames, name)
+	}
+	sort.Strings(tagNames)
+	tags := make([]map[string]string, 0, len(tagNames))
+	for _, name := range tagNames {
+		tags = append(tags, map[string]string{"name": name})
+	}
+
+	return map[string]any{
+		"openapi": "3.0.3",
+		"info": map[string]any{
+			"title":       "VaporLab API",
+			"version":     "1.0.0",
+			"description": "Interactive API documentation for all VaporLab endpoints.",
+		},
+		"servers": []map[string]string{
+			{"url": "/"},
+		},
+		"tags":  tags,
+		"paths": paths,
+	}
+}
+
+func operationID(path, method string) string {
+	clean := strings.Trim(path, "/")
+	clean = strings.ReplaceAll(clean, "/", "_")
+	clean = strings.ReplaceAll(clean, "{", "")
+	clean = strings.ReplaceAll(clean, "}", "")
+	if clean == "" {
+		clean = "root"
+	}
+	return method + "_" + clean
 }
 
 func (s *state) shadowUsers(w http.ResponseWriter, _ *http.Request) {
